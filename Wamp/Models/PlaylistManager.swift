@@ -413,6 +413,8 @@ class PlaylistManager: ObservableObject {
             // auto-advance from the actually playing instance.
             currentIndex = tracks.firstIndex(where: { $0.id == currentTrack.id }) ?? -1
         }
+        tracks.swapAt(currentIndex, 0) // set current track at top of the list, so that all shuffled tracks could be played
+        currentIndex = 0
     }
 
     // MARK: - Saved Playlists
