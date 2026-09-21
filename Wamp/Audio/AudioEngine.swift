@@ -118,33 +118,41 @@ class AudioEngine: ObservableObject {
 
     // MARK: - Playback Controls
 
-    /// Loads an audio file and prepares duration/metadata without starting playback.
-    func load(url: URL) {
+    func load(url: URL, play: Bool = false, startTime: TimeInterval? = nil, endTime: TimeInterval? = nil
+    ) {
+        print("🔵 load: \(url.lastPathComponent) [autoplay: \(play), start: \(startTime), end: \(endTime as Any)], gen=\(playbackGeneration)")
+        
         stop()
         playbackGeneration &+= 1
 
         do {
             try loadFile(url: url)
-        } catch {
-            print("🔴 AudioEngine: failed to load \(url.lastPathComponent): \(error)")
-        }
-    }
 
-    func loadAndPlay(url: URL) {
-        print("🔵 loadAndPlay: \(url.lastPathComponent), gen=\(playbackGeneration)")
-        stop()
-        playbackGeneration &+= 1
-        print("🔵 loadAndPlay: after stop, new gen=\(playbackGeneration)")
-
-        do {
-            try loadFile(url: url)
+            // return, if only loading is requested
+            guard play else { return }
 
             if !engine.isRunning {
                 try engine.start()
-                print("🔵 loadAndPlay: engine started")
+                print("🔵 load: engine started")
             }
             installSpectrumTap()
-            scheduleAndPlay()
+
+            // start playing, either with segment or without
+            if let startTime = startTime {
+                let startFrame = AVAudioFramePosition(startTime * audioSampleRate)
+                let endFrame: AVAudioFramePosition
+                if let endTime = endTime {
+                    endFrame = min(audioLengthFrames, AVAudioFramePosition(endTime * audioSampleRate))
+                } else {
+                    endFrame = audioLengthFrames
+                }
+                
+                seekFrame = max(0, min(startFrame, audioLengthFrames))
+                currentSegmentStartFrame = seekFrame
+                scheduleSegment(endFrame: endFrame)
+            } else {
+                scheduleAndPlay()
+            }
         } catch {
             print("🔴 AudioEngine: failed to load \(url.lastPathComponent): \(error)")
         }
@@ -185,34 +193,6 @@ class AudioEngine: ObservableObject {
         }
         pendingChain = (startFrame: max(0, startFrame), endFrame: endFrame)
         return true
-    }
-
-    /// Load `url` and play from `startTime` until `endTime` (or EOF if nil).
-    /// Used for CUE-derived virtual tracks. When playback reaches the end frame
-    /// the completion handler posts `.trackDidFinish` exactly like a normal track.
-    func loadAndPlay(url: URL, startTime: TimeInterval, endTime: TimeInterval?) {
-        print("🔵 loadAndPlay(range): \(url.lastPathComponent) [\(startTime), \(endTime as Any)]")
-        stop()
-        playbackGeneration &+= 1
-
-        do {
-            try loadFile(url: url)
-            if !engine.isRunning { try engine.start() }
-            installSpectrumTap()
-
-            let startFrame = AVAudioFramePosition(startTime * audioSampleRate)
-            let endFrame: AVAudioFramePosition
-            if let endTime = endTime {
-                endFrame = min(audioLengthFrames, AVAudioFramePosition(endTime * audioSampleRate))
-            } else {
-                endFrame = audioLengthFrames
-            }
-            seekFrame = max(0, min(startFrame, audioLengthFrames))
-            currentSegmentStartFrame = seekFrame
-            scheduleSegment(endFrame: endFrame)
-        } catch {
-            print("🔴 AudioEngine: failed to load \(url.lastPathComponent): \(error)")
-        }
     }
 
     /// Shared helper: opens the audio file and sets duration/sample-rate metadata.
