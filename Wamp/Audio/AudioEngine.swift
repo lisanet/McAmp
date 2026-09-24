@@ -27,7 +27,7 @@ extension AudioEngine {
 }
 
 class AudioEngine: ObservableObject {
-    static let maxSpectrumBars = 26
+    var maxSpectrumBars = 0 // unskinned = 26, skinned = 19, set in MainPlayerView.layout
     // MARK: - Published State
     @Published var isPlaying = false
     @Published var playState: PlayState = .stopped
@@ -47,7 +47,7 @@ class AudioEngine: ObservableObject {
         didSet { eq.bypass = !eqEnabled }
     }
     @Published var preampGain: Float = 0 // dB, -12 to +12
-    @Published var spectrumData: [Float] = Array(repeating: 0, count: maxSpectrumBars)
+    @Published var spectrumData: [Float] = []
 
     // MARK: - EQ State
     @Published private(set) var eqBands: [Float] = Array(repeating: 0, count: 10) // dB per band
@@ -83,7 +83,28 @@ class AudioEngine: ObservableObject {
     private var effectiveVolume: Float {
         isMuted ? 0 : volume
     }
+    
+    // MARK: - Spectrum FFT
+    private var spectrumFFTSetup: FFTSetup?
+    private var spectrumFFTSize = 0
+    private var spectrumSampleRate: Float = 0
+    private var spectrumBars = 0
 
+    private var spectrumWindow: [Float] = []
+    private var spectrumWindowed: [Float] = []
+    private var spectrumReal: [Float] = []
+    private var spectrumImag: [Float] = []
+    private var spectrumMagnitudes: [Float] = []
+    private var spectrumPower: [Float] = []
+
+    /// FFT index ranges for the 19 displayed spectrum bars.
+    private var spectrumRanges: [(start: Int, end: Int)] = []
+    private let spectrumMinFrequency: Float = 32.0
+    private let spectrumMaxFrequency: Float = 16_000.0
+    private var spectrumNormalization: Float = 0
+    private let spectrumDisplayCompression: Float = 0.5  // pow(amplitude, val) val = 1.0 = linear
+    private let spectrumDisplayGain: Float = 4.5 // dB
+    
     // MARK: - Init
     init() {
         eq = AVAudioUnitEQ(numberOfBands: 10)
@@ -118,10 +139,7 @@ class AudioEngine: ObservableObject {
 
     // MARK: - Playback Controls
 
-    func load(url: URL, play: Bool = false, startTime: TimeInterval? = nil, endTime: TimeInterval? = nil
-    ) {
-        print("🔵 load: \(url.lastPathComponent) [autoplay: \(play), start: \(startTime), end: \(endTime as Any)], gen=\(playbackGeneration)")
-        
+    func load(url: URL, play: Bool = false, startTime: TimeInterval? = nil, endTime: TimeInterval? = nil) {
         stop()
         playbackGeneration &+= 1
 
@@ -419,66 +437,116 @@ class AudioEngine: ObservableObject {
         }
     }
 
+    private func prepareSpectrumFFT(fftSize: Int, sampleRate: Float) -> Bool {
+        // Nothing changed -> reuse everything.
+        if fftSize == spectrumFFTSize, sampleRate == spectrumSampleRate, spectrumFFTSetup != nil,
+                maxSpectrumBars == spectrumBars, !spectrumRanges.isEmpty {
+            return true
+        }
+
+        // Dispose old setup.
+        if let setup = spectrumFFTSetup {
+            vDSP_destroy_fftsetup(setup)
+            spectrumFFTSetup = nil
+        }
+        
+        let halfSize = fftSize / 2
+        let log2n = vDSP_Length(log2(Float(fftSize)))
+        guard let setup = vDSP_create_fftsetup(log2n, FFTRadix(kFFTRadix2)) else {
+            return false
+        }
+
+        spectrumFFTSetup = setup
+        spectrumFFTSize = fftSize
+        spectrumSampleRate = sampleRate
+        spectrumBars = maxSpectrumBars
+
+        // Allocate buffers only when FFT size changes.
+        spectrumData = Array(repeating: 0, count: maxSpectrumBars)
+        spectrumWindow = [Float](repeating: 0, count: fftSize)
+        spectrumWindowed = [Float](repeating: 0, count: fftSize)
+        spectrumReal = [Float](repeating: 0, count: halfSize)
+        spectrumImag = [Float](repeating: 0, count: halfSize)
+        spectrumPower = [Float](repeating: 0, count: halfSize)
+
+        // Hann window only has to be generated once.
+        vDSP_hann_window(&spectrumWindow, vDSP_Length(fftSize), Int32(vDSP_HANN_NORM))
+        // normalization
+        vDSP_sve(spectrumWindow, 1, &spectrumNormalization, vDSP_Length(fftSize))
+
+        // Precalculate FFT ranges for the spectrum bars.
+        let frequencyPerBin = sampleRate / Float(fftSize)
+        let maxFrequency = min(spectrumMaxFrequency, sampleRate * 0.5)
+        let frequencyRatio = pow(maxFrequency / spectrumMinFrequency, 1.0 / Float(maxSpectrumBars))
+
+        spectrumRanges.removeAll(keepingCapacity: true)
+        spectrumRanges.reserveCapacity(maxSpectrumBars)
+
+        for i in 0..<maxSpectrumBars {
+            let lowerFrequency = spectrumMinFrequency * pow(frequencyRatio, Float(i))
+            let upperFrequency = spectrumMinFrequency * pow(frequencyRatio, Float(i + 1))
+
+            var start = Int(lowerFrequency / frequencyPerBin)
+            var end = Int(upperFrequency / frequencyPerBin)
+            start = max(1, min(start, halfSize - 1))
+            end = max(start + 1, min(end, halfSize))
+
+            spectrumRanges.append((start, end))
+        }
+        return true
+    }
+    
     private func processSpectrumData(buffer: AVAudioPCMBuffer) {
-        guard let channelData = buffer.floatChannelData?[0] else { return }
+        guard let channelData = buffer.floatChannelData?[0], maxSpectrumBars > 0 else { return }
         let frameCount = Int(buffer.frameLength)
         guard frameCount > 0 else { return }
 
         // Use power-of-2 size for FFT
         let log2n = vDSP_Length(log2(Float(frameCount)))
-        let fftSize = Int(1 << log2n)
+        let fftSize = 1 << Int(log2n)
         let halfSize = fftSize / 2
+        
         // The tap doesn't guarantee buffer sizes; with halfSize below the
-        // 32-bin output the mapping loop would form an empty range and trap.
-        guard halfSize >= AudioEngine.maxSpectrumBars else { return }
+        // maxSpectrumBars-bin output the mapping loop would form an empty range and trap.
+        guard halfSize >= maxSpectrumBars else { return }
+        
+        let sampleRate = Float(buffer.format.sampleRate)
+        guard prepareSpectrumFFT(fftSize: fftSize, sampleRate: sampleRate), let fftSetup = spectrumFFTSetup else {
+            return
+        }
+        
+        // Apply cached Hann window.
+        vDSP_vmul(channelData, 1, spectrumWindow, 1, &spectrumWindowed, 1, vDSP_Length(fftSize))
+        
+        spectrumReal.withUnsafeMutableBufferPointer { realBuf in
+            spectrumImag.withUnsafeMutableBufferPointer { imagBuf in
+                guard let realBase = realBuf.baseAddress, let imagBase = imagBuf.baseAddress else { return }
 
-        guard let fftSetup = vDSP_create_fftsetup(log2n, FFTRadix(kFFTRadix2)) else { return }
-        defer { vDSP_destroy_fftsetup(fftSetup) }
-
-        // Apply Hann window
-        var windowed = [Float](repeating: 0, count: fftSize)
-        var window = [Float](repeating: 0, count: fftSize)
-        vDSP_hann_window(&window, vDSP_Length(fftSize), Int32(vDSP_HANN_NORM))
-        vDSP_vmul(channelData, 1, window, 1, &windowed, 1, vDSP_Length(fftSize))
-
-        // Split complex for FFT
-        var realPart = [Float](repeating: 0, count: halfSize)
-        var imagPart = [Float](repeating: 0, count: halfSize)
-        realPart.withUnsafeMutableBufferPointer { realBuf in
-            imagPart.withUnsafeMutableBufferPointer { imagBuf in
-                var splitComplex = DSPSplitComplex(realp: realBuf.baseAddress!, imagp: imagBuf.baseAddress!)
-                windowed.withUnsafeBytes { rawBuf in
-                    let complexPtr = rawBuf.bindMemory(to: DSPComplex.self)
-                    vDSP_ctoz(complexPtr.baseAddress!, 2, &splitComplex, 1, vDSP_Length(halfSize))
-                }
-                vDSP_fft_zrip(fftSetup, &splitComplex, 1, log2n, FFTDirection(FFT_FORWARD))
-
-                // Compute magnitudes
-                var magnitudes = [Float](repeating: 0, count: halfSize)
-                vDSP_zvmags(&splitComplex, 1, &magnitudes, 1, vDSP_Length(halfSize))
-
-                // Scale and map to 26 bins
-                let binCount = AudioEngine.maxSpectrumBars
-                let minFrequency: Float = 60.0
-                let maxFrequency: Float = 18_000.0
-                let displayGain: Float = 0.011 // just try&error
-                let frequencyPerBin = maxFrequency / Float(fftSize)
-                var spectrum = [Float](repeating: 0, count: binCount)
-                // logarithmic bands
-                let frequencyRatio = pow(maxFrequency / minFrequency, 1.0 / Float(binCount))
+                var splitComplex = DSPSplitComplex(realp: realBase, imagp: imagBase)
                 
-                for i in 0..<binCount {
-                    let lowerFrequency = minFrequency * pow(frequencyRatio, Float(i))
-                    let upperFrequency = minFrequency * pow(frequencyRatio, Float(i + 1))
+                // Convert interleaved real samples to split complex.
+                spectrumWindowed.withUnsafeBytes { rawBuffer in
+                    let complexBuffer = rawBuffer.bindMemory(to: DSPComplex.self)
+                    guard let complexBase = complexBuffer.baseAddress else { return }
 
-                    var start = Int(lowerFrequency / frequencyPerBin)
-                    var end = Int(upperFrequency / frequencyPerBin)
-                    start = max(1, min(start, halfSize - 1))
-                    end = max(1, start + 1, min(end, halfSize))
+                    vDSP_ctoz(complexBase, 2, &splitComplex, 1, vDSP_Length(halfSize))
+                }
+
+                // FFT
+                vDSP_fft_zrip(fftSetup, &splitComplex, 1, log2n, FFTDirection(FFT_FORWARD))
+                // Squared magnitudes = power of band
+                vDSP_zvmags(&splitComplex, 1, &spectrumPower, 1, vDSP_Length(halfSize))
+                
+                let displayGain = pow(10, spectrumDisplayGain/20.0)
+                var spectrum = [Float](repeating: 0, count: maxSpectrumBars)
+                for i in 0..<maxSpectrumBars {
+                    let range = spectrumRanges[i]
+                    var bandPower: Float = 0
+                    vDSP_sve(Array(spectrumPower[range.start..<range.end]), 1, &bandPower, vDSP_Length(range.end - range.start))
                     
-                    var sum: Float = 0
-                    vDSP_sve(Array(magnitudes[start..<end]), 1, &sum, vDSP_Length(end - start))
-                    spectrum[i] = sqrt(sum / Float(end - start)) * displayGain
+                    let bandAmplitude = sqrt(bandPower)
+                    let normalizedAmplitude = bandAmplitude / spectrumNormalization
+                    spectrum[i] = min(1.0, pow(normalizedAmplitude, spectrumDisplayCompression) * displayGain)
                 }
 
                 DispatchQueue.main.async { [weak self] in
@@ -489,6 +557,7 @@ class AudioEngine: ObservableObject {
     }
 
     deinit {
+        if let setup = spectrumFFTSetup { vDSP_destroy_fftsetup(setup) }
         engine.mainMixerNode.removeTap(onBus: 0)
         engine.stop()
     }

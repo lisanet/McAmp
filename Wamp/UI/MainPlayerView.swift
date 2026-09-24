@@ -346,8 +346,10 @@ class MainPlayerView: NSView {
         super.layout()
         if WinampTheme.skinIsActive {
             layoutSkinned()
+            audioEngine?.maxSpectrumBars = 19
         } else {
             layoutUnskinned()
+            audioEngine?.maxSpectrumBars = 26
         }
     }
 
