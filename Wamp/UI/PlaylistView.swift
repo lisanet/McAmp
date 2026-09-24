@@ -442,7 +442,7 @@ class PlaylistView: NSView {
     
     func selectedTrackIndex() -> Int {
         let row = tableView.selectedRow
-        guard row >= 0 else { return -1 }
+        if row < 0 { return playlistManager?.currentIndex ?? -1 }
 
         return playlistManager?.tracks.firstIndex {
             $0.id == displayedTracks[row].id
