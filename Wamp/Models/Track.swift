@@ -67,6 +67,13 @@ struct Track: Identifiable, Codable, Equatable {
     }
 
     var isStereo: Bool { channels >= 2 }
+    
+    var isStream: Bool {
+        guard let scheme = url.scheme?.lowercased() else {
+            return false
+        }
+        return scheme == "http" || scheme == "https"
+    }
 
     @MainActor
     static func fromURL(_ url: URL) async -> Track {

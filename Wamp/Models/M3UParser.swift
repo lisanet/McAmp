@@ -105,21 +105,22 @@ enum M3UParser {
         return (duration, title)
     }
 
-    /// Returns nil for entries that aren't local files (http/https streams etc.).
+
     private static func resolveURL(_ path: String, baseURL: URL) -> URL? {
         if path.hasPrefix("file://") {
             if let u = URL(string: path), u.isFileURL {
                 return u
             }
-            // Legacy tools write unencoded file:// URLs (spaces etc.) —
-            // strip the scheme and treat the remainder as a plain path.
+
             let raw = String(path.dropFirst("file://".count))
             let decoded = raw.removingPercentEncoding ?? raw
             return URL(fileURLWithPath: decoded)
         }
-        // Any other scheme:// line (http, https, ...) is a stream — not supported.
-        if path.range(of: "^[A-Za-z][A-Za-z0-9+.-]*://", options: .regularExpression) != nil {
-            return nil
+        // Webradio / andere absolute URLs
+        if let url = URL(string: path),
+           let scheme = url.scheme?.lowercased(),
+           scheme == "http" || scheme == "https" {
+            return url
         }
         if path.hasPrefix("/") {
             return URL(fileURLWithPath: path)

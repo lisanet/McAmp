@@ -26,6 +26,118 @@ extension AudioEngine {
     static let gaplessChainedKey = "gaplessChained"
 }
 
+extension AudioEngine: RadioStreamDelegate {
+    func radioStream(_ stream: RadioStream,didReceiveAudio data: Data) {
+        radioQueue.async { [weak self] in
+            self?.radioParser?.parse(data)
+        }
+    }
+    func radioStream(_ stream: RadioStream, didReceiveStationTitle title: String) {
+        DispatchQueue.main.async {
+            self.radioTitle = title
+            print("📻 Display:", self.radioDisplayTitle)
+        }
+    }
+    func radioStream(_ stream: RadioStream, didReceiveStreamTitle title: String) {
+        DispatchQueue.main.async {
+            self.streamTitle = title
+            print("📻 Display:", self.radioDisplayTitle)
+        }
+    }
+    func radioStream(_ stream: RadioStream, didFail error: Error) {
+        print("🔴 Radio network error:", error)
+        DispatchQueue.main.async {
+            self.radioBuffering = false
+        }
+    }
+}
+
+extension AudioEngine: RadioAudioParserDelegate {
+    func radioAudioParser(_ parser: RadioAudioParser, didFindMagicCookie cookie: Data) {
+        radioQueue.async { [weak self] in
+            guard let self else { return }
+
+            self.radioMagicCookie = cookie
+            self.radioDecoder?.setMagicCookie(cookie)
+        }
+    }
+    
+    func radioAudioParser(_ parser: RadioAudioParser, didFindFormat format: AVAudioFormat) {
+        radioQueue.async { [weak self] in
+            guard let self else { return }
+            guard self.radioDecoder == nil else { return }
+            
+            let playerFormat =
+                self.playerNode.outputFormat(forBus: 0)
+            let eqInputFormat =
+                self.eq.inputFormat(forBus: 0)
+            let eqOutputFormat =
+                self.eq.outputFormat(forBus: 0)
+            let mixerInputFormat =
+                self.engine.mainMixerNode.inputFormat(forBus: 0)
+            let mixerOutputFormat =
+                self.engine.mainMixerNode.outputFormat(forBus: 0)
+
+            print("📻 Source:       ", format)
+            print("📻 Player out:   ", playerFormat)
+            print("📻 EQ input:     ", eqInputFormat)
+            print("📻 EQ output:    ", eqOutputFormat)
+            print("📻 Mixer input:  ", mixerInputFormat)
+            print("📻 Mixer output: ", mixerOutputFormat)
+
+            // Radio PCM must match the sample rate of the graph at the point
+            // where the player node feeds the EQ.
+            //
+            // AVAudioConverter therefore performs:
+            // compressed stream rate -> player/EQ graph rate
+            guard let outputFormat = AVAudioFormat(
+                commonFormat: .pcmFormatFloat32,
+                sampleRate: eqInputFormat.sampleRate,
+                channels: format.channelCount,
+                interleaved: false
+            ) else {
+                print("🔴 Could not create radio output format")
+                return
+            }
+
+            print("📻 Radio decoder:")
+            print("   compressed input:", format.sampleRate, "Hz")
+            print("   PCM output:      ", outputFormat.sampleRate, "Hz")
+            print(
+                "   SRC ratio:       ",
+                outputFormat.sampleRate / format.sampleRate
+            )
+            print("📻 Radio PCM:       ", outputFormat)
+
+            let decoder = RadioDecoder(inputFormat: format,outputFormat: outputFormat)
+
+            guard let decoder else {
+                print("🔴 Could not create RadioDecoder")
+                return
+            }
+
+            if let cookie = self.radioMagicCookie {
+                decoder.setMagicCookie(cookie)
+            }
+
+            self.radioDecoder = decoder
+            self.audioSampleRate = outputFormat.sampleRate
+        }
+    }
+
+    func radioAudioParser(_ parser: RadioAudioParser, didReceive data: Data, packetDescriptions: [AudioStreamPacketDescription]) {
+        radioQueue.async { [weak self] in
+            guard let self, let decoder = self.radioDecoder,let pcm = decoder.decode(data: data, packetDescriptions:packetDescriptions)
+            else { return }
+            self.scheduleRadioBuffer(pcm)
+        }
+    }
+
+    func radioAudioParser(_ parser: RadioAudioParser, didFail status: OSStatus) {
+        print("🔴 AudioFileStream:", status)
+    }
+}
+
 class AudioEngine: ObservableObject {
     var maxSpectrumBars = 0 // unskinned = 26, skinned = 19, set in MainPlayerView.layout
     // MARK: - Published State
@@ -105,6 +217,39 @@ class AudioEngine: ObservableObject {
     private let spectrumDisplayCompression: Float = 0.5  // pow(amplitude, val) val = 1.0 = linear
     private let spectrumDisplayGain: Float = 4.5 // dB
     
+    /// Radio streams
+    private var radioStream: RadioStream?
+    private var radioParser: RadioAudioParser?
+    private var radioDecoder: RadioDecoder?
+    private let radioQueue = DispatchQueue(label: "Wamp.RadioAudio")
+    private var radioScheduledBuffers = 0
+    private var radioPlaybackStarted = false
+    private var radioMagicCookie: Data?
+
+    @Published var isRadioStream = false
+    @Published var radioTitle = ""
+    @Published var streamTitle = ""
+    @Published var radioBuffering = false
+    
+    var radioDisplayTitle: String {
+        let station = radioTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        let song = streamTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if !station.isEmpty && !song.isEmpty {
+            return "\(station) - \(song) - LIVE"
+        }
+
+        if !station.isEmpty {
+            return "\(station) - LIVE"
+        }
+
+        if !song.isEmpty {
+            return "\(song) - LIVE"
+        }
+
+        return "LIVE"
+    }
+    
     // MARK: - Init
     init() {
         eq = AVAudioUnitEQ(numberOfBands: 10)
@@ -176,6 +321,7 @@ class AudioEngine: ObservableObject {
         }
     }
 
+    
     /// Schedule a follow-up segment back-to-back on the same player node —
     /// no `stop()`, no reload — so the boundary is sample-exact. Returns true
     /// on success, false if the engine isn't currently playing this file.
@@ -232,6 +378,21 @@ class AudioEngine: ObservableObject {
     }
 
     func play() {
+        if isRadioStream {
+                do {
+                    if !engine.isRunning {
+                        try engine.start()
+                    }
+                    installSpectrumTap()
+                    playerNode.play()
+                    isPlaying = true
+                    playState = .playing
+                } catch {
+                    print("AudioEngine: failed to resume radio:", error)
+                }
+                return
+            }
+
         guard audioFile != nil else { return }
         do {
             if !engine.isRunning {
@@ -262,6 +423,19 @@ class AudioEngine: ObservableObject {
 
     func stop() {
         print("🟡 stop() called, gen=\(playbackGeneration), isPlaying=\(isPlaying)")
+        // radio stream
+        radioStream?.stop()
+        radioStream = nil
+        radioParser = nil
+        radioDecoder = nil
+        radioScheduledBuffers = 0
+        radioPlaybackStarted = false
+        radioBuffering = false
+        isRadioStream = false
+        radioTitle = ""
+        streamTitle = ""
+        radioMagicCookie = nil
+
         playerNode.stop()
         isPlaying = false
         playState = .stopped
@@ -279,6 +453,7 @@ class AudioEngine: ObservableObject {
     }
 
     func seek(to time: TimeInterval) {
+        guard !isRadioStream else { return }
         guard audioFile != nil else { return }
         let targetFrame = AVAudioFramePosition(time * audioSampleRate)
         let upperBound = currentSegmentEndFrame > 0 ? currentSegmentEndFrame : audioLengthFrames
@@ -556,6 +731,74 @@ class AudioEngine: ObservableObject {
         }
     }
 
+    // MARK: - Radio Streams
+    func loadStream(url: URL, play: Bool = true) {
+        stop()
+
+        playbackGeneration &+= 1
+
+        audioFile = nil
+        duration = 0
+        currentTime = 0
+        seekFrame = 0
+
+        isRadioStream = true
+        radioTitle = ""
+        streamTitle = ""
+        radioBuffering = true
+        radioMagicCookie = nil
+
+        radioScheduledBuffers = 0
+        radioPlaybackStarted = false
+
+        do {
+            let parser = try RadioAudioParser()
+            parser.delegate = self
+            radioParser = parser
+
+            let stream = RadioStream()
+            stream.delegate = self
+            radioStream = stream
+
+            if !engine.isRunning {
+                try engine.start()
+            }
+
+            installSpectrumTap()
+
+            if play {
+                stream.start(url: url)
+            }
+
+        } catch {
+            print("🔴 Failed to start radio:", error)
+            isRadioStream = false
+            radioBuffering = false
+        }
+    }
+
+    private func scheduleRadioBuffer(_ buffer: AVAudioPCMBuffer) {
+        radioScheduledBuffers += 1
+        playerNode.scheduleBuffer(buffer, at: nil, options: [], completionCallbackType: .dataConsumed)
+        { [weak self] _ in
+            guard let self else { return }
+
+            self.radioQueue.async { self.radioScheduledBuffers = max(0, self.radioScheduledBuffers - 1) }
+        }
+
+        // Erste Version:
+        // einige Decoder-Buffer puffern.
+        if !radioPlaybackStarted, radioScheduledBuffers >= 5 {
+            radioPlaybackStarted = true
+            DispatchQueue.main.async {
+                self.playerNode.play()
+                self.isPlaying = true
+                self.playState = .playing
+                self.radioBuffering = false
+            }
+        }
+    }
+    
     deinit {
         if let setup = spectrumFFTSetup { vDSP_destroy_fftsetup(setup) }
         engine.mainMixerNode.removeTap(onBus: 0)
