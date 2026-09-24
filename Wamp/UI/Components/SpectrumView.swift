@@ -8,13 +8,16 @@ class SpectrumView: NSView {
             needsDisplay = true
         }
     }
-    var barCount: Int = 26
+    var barCount: Int = 0
 
     /// Winamp convention: 16 vertical rows, each painted with viscolors[2..17] bottom→top.
     private static let rowCount = 16
 
-    /// Per-bar peak position (0...rowCount), decays 1 row per spectrumData update.
+    private let barWidth: CGFloat = 3
+    private let gap: CGFloat = 1
+    /// Per-bar peak position (0...rowCount), decays 0.35 rows per spectrumData update.
     private var peaks: [CGFloat] = []
+    private var amplitudeBars: [Int] = []
 
     private var skinObserver: AnyCancellable?
 
@@ -29,12 +32,16 @@ class SpectrumView: NSView {
     required init?(coder: NSCoder) { fatalError() }
 
     private func updatePeaks() {
-        if peaks.count != barCount { peaks = Array(repeating: 0, count: barCount) }
+        barCount = spectrumData.count // unskinned = 26, skinned = 19
+        if amplitudeBars.count != barCount {
+            amplitudeBars = Array(repeating: 0, count: barCount)
+            peaks = Array(repeating: 0, count: barCount)
+        }
         let rows = CGFloat(Self.rowCount)
         for i in 0..<barCount {
-            let dataIndex = i < spectrumData.count ? i : 0
-            let amplitude = spectrumData.isEmpty ? Float(0) : min(1, spectrumData[dataIndex])
+            let amplitude = spectrumData[i]
             let barRows = CGFloat(amplitude) * rows
+            amplitudeBars[i] = Int(barRows)
             if barRows >= peaks[i] {
                 peaks[i] = barRows
             } else {
@@ -45,10 +52,7 @@ class SpectrumView: NSView {
 
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
-
-        let barWidth: CGFloat = 3
-        let gap: CGFloat = 1
-        let totalBars = min(barCount, Int(bounds.width / (barWidth + gap)))
+        guard amplitudeBars.count > 0 else { return }
         let rows = Self.rowCount
         let rowHeight = bounds.height / CGFloat(rows)
 
@@ -59,10 +63,8 @@ class SpectrumView: NSView {
         // Peak cap: viscolors[23] per Winamp convention.
         let peakColor = viscolors[23]
 
-        for i in 0..<totalBars {
-            let dataIndex = i < spectrumData.count ? i : 0
-            let amplitude = spectrumData.isEmpty ? Float(0) : min(1, spectrumData[dataIndex])
-            let litRows = Int(CGFloat(amplitude) * CGFloat(rows))
+        for i in 0..<barCount {
+            let litRows = amplitudeBars[i]
             let x = CGFloat(i) * (barWidth + gap)
 
             // Discrete 16-step bar
@@ -75,8 +77,7 @@ class SpectrumView: NSView {
             }
 
             // Peak cap
-            if dataIndex < peaks.count {
-                let peakRow = Int(peaks[dataIndex])
+                let peakRow = Int(peaks[i])
                 if peakRow > litRows && peakRow < rows {
                     peakColor.setFill()
                     NSRect(x: x,
@@ -84,7 +85,6 @@ class SpectrumView: NSView {
                            width: barWidth,
                            height: rowHeight).fill()
                 }
-            }
         }
     }
 }
