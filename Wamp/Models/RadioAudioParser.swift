@@ -17,6 +17,7 @@ protocol RadioAudioParserDelegate: AnyObject {
     func radioAudioParser(_ parser: RadioAudioParser,didFail status: OSStatus)
 }
 
+
 final class RadioAudioParser {
     weak var delegate: RadioAudioParserDelegate?
     private var streamID: AudioFileStreamID?
@@ -73,28 +74,6 @@ final class RadioAudioParser {
         }
     }
 }
-
-//private extension RadioAudioParser {
-//
-//    func handleProperty(stream: AudioFileStreamID, propertyID: AudioFileStreamPropertyID) {
-//        guard propertyID == kAudioFileStreamProperty_DataFormat
-//                else { return }
-//
-//        var description = AudioStreamBasicDescription()
-//        var size = UInt32(MemoryLayout<AudioStreamBasicDescription>.size)
-//        let status = AudioFileStreamGetProperty(stream, kAudioFileStreamProperty_DataFormat, &size, &description)
-//
-//        guard status == noErr else {
-//            delegate?.radioAudioParser(self,didFail: status)
-//            return
-//        }
-//
-//        guard let format = AVAudioFormat(streamDescription: &description)
-//                else { return }
-//
-//        delegate?.radioAudioParser(self, didFindFormat: format)
-//    }
-//}
 
 private extension RadioAudioParser {
     

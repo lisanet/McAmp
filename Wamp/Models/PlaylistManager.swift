@@ -224,7 +224,7 @@ class PlaylistManager: ObservableObject {
                         title:
                             entry.title ??
                             entry.url.host ??
-                            "Internet Radio",
+                            "LIVE Internet Radio",
                         artist: "",
                         album: "",
                         duration: entry.duration ?? 0,
@@ -259,7 +259,7 @@ class PlaylistManager: ObservableObject {
                 let title =
                     entry.title ??
                     entry.url.host ??
-                    "Internet Radio"
+                    "LIVE Internet Radio"
                 let track = Track(
                     url: entry.url,
                     title: title,
@@ -379,7 +379,7 @@ class PlaylistManager: ObservableObject {
         let track = tracks[index]
         print("⚡ playTrack(at: \(index)) — \(track.url)")
         if track.isStream {
-            audioEngine?.loadStream(url: track.url, play: true)
+            audioEngine?.loadStream(url: track.url, stationTitle: track.title, play: true)
             return
         }
         if let start = track.cueStart {

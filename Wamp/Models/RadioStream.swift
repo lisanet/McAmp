@@ -116,25 +116,12 @@ final class RadioStream: NSObject {
     private func parseMetadata(_ data: Data) {
         let trimmed = Data(data.prefix { $0 != 0 })
 
-        guard !trimmed.isEmpty else {
-            return
-        }
-
-        guard let raw = String(data: trimmed, encoding: .utf8) ?? String(data: trimmed, encoding: .isoLatin1) else {
-            return
-        }
-
-        guard let title = extractICYValue(key: "StreamTitle", from: raw) else {
-            return
-        }
+        guard !trimmed.isEmpty else { return }
+        guard let raw = String(data: trimmed, encoding: .utf8) ?? String(data: trimmed, encoding: .isoLatin1) else { return }
+        guard let title = extractICYValue(key: "StreamTitle", from: raw) else { return }
 
         let streamTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        guard !streamTitle.isEmpty else {
-            return
-        }
-
-        print("📻 StreamTitle:", streamTitle)
+        guard !streamTitle.isEmpty else { return }
 
         delegate?.radioStream(self, didReceiveStreamTitle: streamTitle)
     }
@@ -161,7 +148,7 @@ final class RadioStream: NSObject {
 }
 
 extension RadioStream: URLSessionDataDelegate {
-
+    
     func urlSession(_ session: URLSession,
                     dataTask: URLSessionDataTask,
                     didReceive response: URLResponse,
@@ -180,20 +167,23 @@ extension RadioStream: URLSessionDataDelegate {
                 if !stationTitle.isEmpty {
                     delegate?.radioStream(self, didReceiveStationTitle: stationTitle)
                 }
+                if let bitrate = http.value(forHTTPHeaderField: "icy-br") {
+                    print("📻 Bitrate:", bitrate)
+                }
+                if let type = http.value(forHTTPHeaderField: "Content-Type") { print("📻 Content-Type:", type)}
             }
-//            if let bitrate = http.value(forHTTPHeaderField: "icy-br") { print("📻 Bitrate:", bitrate) }
-//            if let type = http.value(forHTTPHeaderField: "Content-Type") { print("📻 Content-Type:", type)}
+            completionHandler(.allow)
         }
-        completionHandler(.allow)
     }
-
-    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
-        process(data)
-    }
-
-    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-        guard let error else { return }
-        if (error as NSError).code == NSURLErrorCancelled { return }
-        delegate?.radioStream(self, didFail: error)
-    }
+        
+        func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+            process(data)
+        }
+        
+        func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+            guard let error else { return }
+            if (error as NSError).code == NSURLErrorCancelled { return }
+            delegate?.radioStream(self, didFail: error)
+        }
+    
 }

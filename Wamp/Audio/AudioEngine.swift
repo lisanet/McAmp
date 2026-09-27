@@ -35,13 +35,11 @@ extension AudioEngine: RadioStreamDelegate {
     func radioStream(_ stream: RadioStream, didReceiveStationTitle title: String) {
         DispatchQueue.main.async {
             self.radioTitle = title
-            print("📻 Display:", self.radioDisplayTitle)
         }
     }
     func radioStream(_ stream: RadioStream, didReceiveStreamTitle title: String) {
         DispatchQueue.main.async {
             self.streamTitle = title
-            print("📻 Display:", self.radioDisplayTitle)
         }
     }
     func radioStream(_ stream: RadioStream, didFail error: Error) {
@@ -67,23 +65,7 @@ extension AudioEngine: RadioAudioParserDelegate {
             guard let self else { return }
             guard self.radioDecoder == nil else { return }
             
-            let playerFormat =
-                self.playerNode.outputFormat(forBus: 0)
-            let eqInputFormat =
-                self.eq.inputFormat(forBus: 0)
-            let eqOutputFormat =
-                self.eq.outputFormat(forBus: 0)
-            let mixerInputFormat =
-                self.engine.mainMixerNode.inputFormat(forBus: 0)
-            let mixerOutputFormat =
-                self.engine.mainMixerNode.outputFormat(forBus: 0)
-
-            print("📻 Source:       ", format)
-            print("📻 Player out:   ", playerFormat)
-            print("📻 EQ input:     ", eqInputFormat)
-            print("📻 EQ output:    ", eqOutputFormat)
-            print("📻 Mixer input:  ", mixerInputFormat)
-            print("📻 Mixer output: ", mixerOutputFormat)
+            let eqInputFormat = self.eq.inputFormat(forBus: 0)
 
             // Radio PCM must match the sample rate of the graph at the point
             // where the player node feeds the EQ.
@@ -99,15 +81,6 @@ extension AudioEngine: RadioAudioParserDelegate {
                 print("🔴 Could not create radio output format")
                 return
             }
-
-            print("📻 Radio decoder:")
-            print("   compressed input:", format.sampleRate, "Hz")
-            print("   PCM output:      ", outputFormat.sampleRate, "Hz")
-            print(
-                "   SRC ratio:       ",
-                outputFormat.sampleRate / format.sampleRate
-            )
-            print("📻 Radio PCM:       ", outputFormat)
 
             let decoder = RadioDecoder(inputFormat: format,outputFormat: outputFormat)
 
@@ -235,16 +208,16 @@ class AudioEngine: ObservableObject {
         let station = radioTitle.trimmingCharacters(in: .whitespacesAndNewlines)
         let song = streamTitle.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        if !station.isEmpty && !song.isEmpty {
-            return "\(station) - \(song) - LIVE"
-        }
-
-        if !station.isEmpty {
-            return "\(station) - LIVE"
-        }
+//        if !station.isEmpty && !song.isEmpty {
+//            return "\(station) - \(song)"
+//        }
+//
+//        if !station.isEmpty {
+//            return "\(station)"
+//        }
 
         if !song.isEmpty {
-            return "\(song) - LIVE"
+            return "\(song)"
         }
 
         return "LIVE"
@@ -260,8 +233,11 @@ class AudioEngine: ObservableObject {
     private func setupAudioChain() {
         engine.attach(playerNode)
         engine.attach(eq)
-        engine.connect(playerNode, to: eq, format: nil)
-        engine.connect(eq, to: engine.mainMixerNode, format: nil)
+
+        let hardwareFormat = engine.outputNode.outputFormat(forBus: 0)
+        engine.connect(playerNode, to: eq, format: hardwareFormat)
+        engine.connect(eq, to: engine.mainMixerNode, format: hardwareFormat)
+
         engine.mainMixerNode.outputVolume = effectiveVolume
     }
 
@@ -296,7 +272,6 @@ class AudioEngine: ObservableObject {
 
             if !engine.isRunning {
                 try engine.start()
-                print("🔵 load: engine started")
             }
             installSpectrumTap()
 
@@ -732,7 +707,7 @@ class AudioEngine: ObservableObject {
     }
 
     // MARK: - Radio Streams
-    func loadStream(url: URL, play: Bool = true) {
+    func loadStream(url: URL, stationTitle: String? = nil, play: Bool = true) {
         stop()
 
         playbackGeneration &+= 1
@@ -743,7 +718,9 @@ class AudioEngine: ObservableObject {
         seekFrame = 0
 
         isRadioStream = true
-        radioTitle = ""
+        let trimmedStation = stationTitle?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        // radioTitle = (trimmedStation != "LIVE Internet Radio" && !trimmedStation.isEmpty) ? trimmedStation : ""
+        radioTitle = trimmedStation
         streamTitle = ""
         radioBuffering = true
         radioMagicCookie = nil

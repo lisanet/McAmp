@@ -61,10 +61,26 @@ class HotKeyManager {
             return
         }
 
+        let title: String
+        let artist: String
+        let duration: TimeInterval
+
+        if engine.isRadioStream || track.isStream {
+            let song = engine.streamTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+            let station = engine.radioTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+            title = !song.isEmpty ? song : (!station.isEmpty ? station : track.title)
+            artist = !station.isEmpty ? station : (!track.artist.isEmpty && track.artist != "Unknown Artist" ? track.artist : "LIVE Internet Radio")
+            duration = 0
+        } else {
+            title = track.title
+            artist = track.artist
+            duration = track.duration
+        }
+
         var info: [String: Any] = [
-            MPMediaItemPropertyTitle: track.title,
-            MPMediaItemPropertyArtist: track.artist,
-            MPMediaItemPropertyPlaybackDuration: track.duration,
+            MPMediaItemPropertyTitle: title,
+            MPMediaItemPropertyArtist: artist,
+            MPMediaItemPropertyPlaybackDuration: duration,
             MPNowPlayingInfoPropertyElapsedPlaybackTime: engine.currentTime,
             MPNowPlayingInfoPropertyPlaybackRate: engine.isPlaying ? 1.0 : 0.0
         ]

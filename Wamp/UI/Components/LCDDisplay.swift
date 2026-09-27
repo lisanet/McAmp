@@ -4,6 +4,7 @@ import Combine
 class LCDDisplay: NSView {
     var text: String = "" {
         didSet {
+            guard text != oldValue else { return }
             prepareScrolling()
             needsDisplay = true
         }

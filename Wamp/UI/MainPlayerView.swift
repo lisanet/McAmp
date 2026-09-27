@@ -529,6 +529,15 @@ class MainPlayerView: NSView {
             }
             .store(in: &cancellables)
 
+        // Radio stream title info
+        Publishers.CombineLatest3(audioEngine.$isRadioStream, audioEngine.$radioTitle, audioEngine.$streamTitle)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateTrackInfo()
+                self?.needsDisplay = true
+            }
+            .store(in: &cancellables)
+
         // Seek slider
         audioEngine.$duration
             .receive(on: DispatchQueue.main)
@@ -617,12 +626,33 @@ class MainPlayerView: NSView {
             sampleRateLabel.stringValue = ""
             return
         }
-        let index = (playlistManager?.currentIndex ?? 0) + 1
-        lcdDisplay.text = "\(index). \(track.displayTitle) (\(track.formattedDuration))"
-        bitrateLabel.stringValue = "\(track.bitrate > 0 ? "\(track.bitrate)" : "---")"
-        bitrateLabel.textColor = WinampTheme.greenBright
-        sampleRateLabel.stringValue = "\(track.sampleRate > 0 ? "\(track.sampleRate / 1000)" : "--")"
-        sampleRateLabel.textColor = WinampTheme.greenBright
+        // let index = (playlistManager?.currentIndex ?? 0) + 1
+
+        if (audioEngine?.isRadioStream == true) || track.isStream {
+            let streamDisplay: String
+            if let engine = audioEngine, engine.isRadioStream {
+                streamDisplay = engine.radioDisplayTitle
+            } else {
+                streamDisplay = track.displayTitle
+            }
+            let newText = "\(streamDisplay)"
+            if lcdDisplay.text != newText {
+                lcdDisplay.text = newText
+            }
+            bitrateLabel.stringValue = track.bitrate > 0 ? "\(track.bitrate)" : "---"
+            bitrateLabel.textColor = WinampTheme.greenBright
+            sampleRateLabel.stringValue = track.sampleRate > 0 ? "\(track.sampleRate / 1000)" : "--"
+            sampleRateLabel.textColor = WinampTheme.greenBright
+        } else {
+            let newText = "\(track.displayTitle) (\(track.formattedDuration))"
+            if lcdDisplay.text != newText {
+                lcdDisplay.text = newText
+            }
+            bitrateLabel.stringValue = "\(track.bitrate > 0 ? "\(track.bitrate)" : "---")"
+            bitrateLabel.textColor = WinampTheme.greenBright
+            sampleRateLabel.stringValue = "\(track.sampleRate > 0 ? "\(track.sampleRate / 1000)" : "--")"
+            sampleRateLabel.textColor = WinampTheme.greenBright
+        }
         stereoLabel.textColor = track.isStereo ? WinampTheme.greenBright : WinampTheme.greenDimText
         monoLabel.textColor = track.isStereo ? WinampTheme.greenDimText : WinampTheme.greenBright
     }

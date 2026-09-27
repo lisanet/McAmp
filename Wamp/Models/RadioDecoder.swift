@@ -34,13 +34,7 @@ final class RadioDecoder {
         guard !packetDescriptions.isEmpty else {
             return nil
         }
-        print(
-            "📻 Decode input:",
-            "bytes:", data.count,
-            "packets:", packetDescriptions.count,
-            "frames/packet:", inputFormat.streamDescription.pointee.mFramesPerPacket
-        )
-        
+     
         let packetCount = packetDescriptions.count
         guard packetCount > 0, !data.isEmpty else {
             return nil
@@ -98,14 +92,6 @@ final class RadioDecoder {
             return compressed
         }
 
-        print(
-            "📻 Decode result:",
-            "frames:", pcm.frameLength,
-            "capacity:", pcm.frameCapacity,
-            "rate:", pcm.format.sampleRate
-        )
-        
-        
         if let error {
             print("🔴 Radio decoder:", error)
             return nil
