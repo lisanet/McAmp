@@ -61,6 +61,8 @@ class MainPlayerView: NSView {
     private weak var audioEngine: AudioEngine?
     private weak var playlistManager: PlaylistManager?
     private weak var playlistView: PlaylistView?
+    private var radioClockTimer: Timer?
+    private var lastRadioClockMinute: Int?
 
     // Window dragging state for skinned mode (titleBar is hidden)
     private var dragOrigin: NSPoint?
@@ -519,7 +521,9 @@ class MainPlayerView: NSView {
         // Time
         audioEngine.$currentTime
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] time in self?.timeDisplay.timeInSeconds = time }
+            .sink { [weak self] time in
+                guard self?.audioEngine?.isRadioStream != true else { return }
+                self?.timeDisplay.timeInSeconds = time }
             .store(in: &cancellables)
 
         // Spectrum
@@ -542,7 +546,12 @@ class MainPlayerView: NSView {
         // Radio stream title info
         Publishers.CombineLatest3(audioEngine.$isRadioStream, audioEngine.$radioTitle, audioEngine.$streamTitle)
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
+            .sink { [weak self] isRadioStream, _, _ in
+                if isRadioStream {
+                    self?.startRadioClock()
+                } else {
+                    self?.stopRadioClock()
+                }
                 self?.updateTrackInfo()
                 self?.needsDisplay = true
             }
@@ -705,6 +714,35 @@ class MainPlayerView: NSView {
                 }
             }
         }
+    }
+
+    // MARK: - Radio Clock
+
+    private func startRadioClock() {
+        stopRadioClock()
+        updateRadioClock()
+        
+        radioClockTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) {
+            [weak self] _ in
+                self?.updateRadioClock()
+            }
+    }
+
+    private func stopRadioClock() {
+        radioClockTimer?.invalidate()
+        radioClockTimer = nil
+    }
+
+    private func updateRadioClock() {
+        guard audioEngine?.isRadioStream == true else { return }
+
+        let components = Calendar.current.dateComponents([.hour, .minute],from: Date())
+        let hour = components.hour ?? 0
+        let minute = components.minute ?? 0
+        guard minute != lastRadioClockMinute else { return }
+        
+        lastRadioClockMinute = minute
+        timeDisplay.timeInSeconds = TimeInterval(hour * 60 + minute)
     }
 
     // MARK: - Window dragging (skinned mode)
