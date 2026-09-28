@@ -8,8 +8,9 @@ import Foundation
 
 protocol RadioStreamDelegate: AnyObject {
     func radioStream(_ stream: RadioStream, didReceiveAudio data: Data)
-    func radioStream(_ stream: RadioStream, didReceiveStationTitle title: String)
+    func radioStream(_ stream: RadioStream, didReceiveRadioTitle title: String)
     func radioStream(_ stream: RadioStream, didReceiveStreamTitle title: String)
+    func radioStream(_ stream: RadioStream, didReceiveBitrate bitrate: Int)
     func radioStream(_ stream: RadioStream, didFail error: Error)
 }
 
@@ -60,15 +61,13 @@ final class RadioStream: NSObject {
 
     private func process(_ data: Data) {
         guard let interval = metadataInterval else {
-            // Server liefert keine ICY-Metadaten.
+            //  no ICY-metadata
             delegate?.radioStream(self,didReceiveAudio: data)
             return
         }
 
         var offset = 0
-
         while offset < data.count {
-            // Metadata lesen
             if metadataBytesRemaining > 0 {
                 let available = data.count - offset
                 let count = min(available,metadataBytesRemaining)
@@ -86,7 +85,6 @@ final class RadioStream: NSObject {
                 continue
             }
 
-            // Audio lesen
             if audioBytesRemaining > 0 {
                 let available = data.count - offset
                 let count = min(available,audioBytesRemaining)
@@ -101,8 +99,7 @@ final class RadioStream: NSObject {
                 continue
             }
 
-            // Das Byte nach icy-metaint enthält
-            // Metadata-Länge / 16.
+            // Das Byte nach icy-metaint enthält Metadata-Länge / 16.
             let lengthByte = Int(data[offset])
             offset += 1
 
@@ -130,16 +127,11 @@ final class RadioStream: NSObject {
         let escapedKey = NSRegularExpression.escapedPattern(for: key)
         let pattern = "\(escapedKey)='((?:[^'\\\\]|\\\\.)*)'"
 
-        guard let regex = try? NSRegularExpression(pattern: pattern) else {
-            return nil
-        }
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return nil }
 
         let range = NSRange(raw.startIndex..., in: raw)
-
         guard let match = regex.firstMatch(in: raw, range: range),
-                let valueRange = Range(match.range(at: 1), in: raw) else {
-            return nil
-        }
+                let valueRange = Range(match.range(at: 1), in: raw) else { return nil }
 
         return String(raw[valueRange]).replacingOccurrences(of: "\\'", with: "'")
     }
@@ -163,27 +155,29 @@ extension RadioStream: URLSessionDataDelegate {
             
             if let name = http.value(forHTTPHeaderField: "icy-name") {
                 let stationTitle = name.trimmingCharacters(in: .whitespacesAndNewlines)
-                print("📻 Station:", stationTitle)
+                debugLog("📻 Station:", stationTitle)
                 if !stationTitle.isEmpty {
-                    delegate?.radioStream(self, didReceiveStationTitle: stationTitle)
+                    delegate?.radioStream(self, didReceiveRadioTitle: stationTitle)
                 }
-                if let bitrate = http.value(forHTTPHeaderField: "icy-br") {
-                    print("📻 Bitrate:", bitrate)
+                if let value = http.value(forHTTPHeaderField: "icy-br"),
+                   let bitrate = Int(value.trimmingCharacters(in: .whitespacesAndNewlines)) {
+                    debugLog("📻 Bitrate:", bitrate)
+                    delegate?.radioStream(self, didReceiveBitrate: bitrate)
                 }
-                if let type = http.value(forHTTPHeaderField: "Content-Type") { print("📻 Content-Type:", type)}
+                if let type = http.value(forHTTPHeaderField: "Content-Type") { debugLog("📻 Content-Type:", type)}
             }
             completionHandler(.allow)
         }
     }
         
-        func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
-            process(data)
-        }
-        
-        func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-            guard let error else { return }
-            if (error as NSError).code == NSURLErrorCancelled { return }
-            delegate?.radioStream(self, didFail: error)
-        }
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+        process(data)
+    }
+    
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        guard let error else { return }
+        if (error as NSError).code == NSURLErrorCancelled { return }
+        delegate?.radioStream(self, didFail: error)
+    }
     
 }

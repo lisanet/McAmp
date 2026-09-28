@@ -84,7 +84,6 @@ private extension RadioAudioParser {
         case kAudioFileStreamProperty_MagicCookieData:
             readMagicCookie(from: stream)
         case kAudioFileStreamProperty_ReadyToProducePackets:
-            // Zu diesem Zeitpunkt sind Format/Cookie normalerweise bekannt.
             readDataFormat(from: stream)
             readMagicCookie(from: stream)
         case kAudioFileStreamProperty_FormatList:
@@ -151,20 +150,6 @@ private extension RadioAudioParser {
             return
         }
     }
-    
-//    private func fourCC(_ value: UInt32) -> String {
-//        let bytes: [UInt8] = [
-//            UInt8((value >> 24) & 0xff),
-//            UInt8((value >> 16) & 0xff),
-//            UInt8((value >> 8) & 0xff),
-//            UInt8(value & 0xff)
-//        ]
-//
-//        return String(
-//            bytes: bytes,
-//            encoding: .ascii
-//        ) ?? "\(value)"
-//    }
 }
 
 

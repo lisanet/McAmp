@@ -31,15 +31,10 @@ final class RadioDecoder {
     }
     
     func decode(data: Data, packetDescriptions: [AudioStreamPacketDescription]) -> AVAudioPCMBuffer? {
-        guard !packetDescriptions.isEmpty else {
-            return nil
-        }
-     
+        guard !packetDescriptions.isEmpty else { return nil }
+        guard !data.isEmpty else { return nil }
+        
         let packetCount = packetDescriptions.count
-        guard packetCount > 0, !data.isEmpty else {
-            return nil
-        }
-
         let largestPacket = packetDescriptions
                 .map { Int($0.mDataByteSize) }
                 .max() ?? 0
@@ -50,17 +45,13 @@ final class RadioDecoder {
                 packetCapacity: AVAudioPacketCount(packetCount),
                 maximumPacketSize: maximumPacketSize)
         
-        guard data.count <= compressed.byteCapacity else {
-            return nil
-        }
+        guard data.count <= compressed.byteCapacity else { return nil }
 
         compressed.packetCount = AVAudioPacketCount(packetCount)
         compressed.byteLength = UInt32(data.count)
         
         data.withUnsafeBytes { source in
-            guard let sourceAddress = source.baseAddress else {
-                return
-            }
+            guard let sourceAddress = source.baseAddress else { return }
             memcpy(compressed.data, sourceAddress, data.count)
         }
 
@@ -85,16 +76,9 @@ final class RadioDecoder {
                 status.pointee = .noDataNow
                 return nil
             }
-
             supplied = true
             status.pointee = .haveData
-
             return compressed
-        }
-
-        if let error {
-            print("🔴 Radio decoder:", error)
-            return nil
         }
 
         switch result {
@@ -103,6 +87,7 @@ final class RadioDecoder {
         case .endOfStream:
             return pcm.frameLength > 0 ? pcm : nil
         case .error:
+            debugLog("🔴 Radio decoder:", error?.localizedDescription ?? "unknown error")
             return nil
         @unknown default:
             return nil

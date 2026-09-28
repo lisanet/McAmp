@@ -32,7 +32,7 @@ extension AudioEngine: RadioStreamDelegate {
             self?.radioParser?.parse(data)
         }
     }
-    func radioStream(_ stream: RadioStream, didReceiveStationTitle title: String) {
+    func radioStream(_ stream: RadioStream, didReceiveRadioTitle title: String) {
         DispatchQueue.main.async {
             self.radioTitle = title
         }
@@ -42,8 +42,13 @@ extension AudioEngine: RadioStreamDelegate {
             self.streamTitle = title
         }
     }
+    func radioStream(_ stream: RadioStream, didReceiveBitrate bitrate: Int) {
+        DispatchQueue.main.async {
+            self.radioBitrate = bitrate
+        }
+    }
     func radioStream(_ stream: RadioStream, didFail error: Error) {
-        print("🔴 Radio network error:", error)
+        debugLog("🔴 Radio network error:", error)
         DispatchQueue.main.async {
             self.radioBuffering = false
         }
@@ -65,6 +70,11 @@ extension AudioEngine: RadioAudioParserDelegate {
             guard let self else { return }
             guard self.radioDecoder == nil else { return }
             
+            let streamSampleRate = Int(format.sampleRate.rounded())
+            DispatchQueue.main.async {
+                self.radioSampleRate = streamSampleRate
+            }
+            
             let eqInputFormat = self.eq.inputFormat(forBus: 0)
 
             // Radio PCM must match the sample rate of the graph at the point
@@ -78,14 +88,14 @@ extension AudioEngine: RadioAudioParserDelegate {
                 channels: format.channelCount,
                 interleaved: false
             ) else {
-                print("🔴 Could not create radio output format")
+                debugLog("🔴 Could not create radio output format")
                 return
             }
 
             let decoder = RadioDecoder(inputFormat: format,outputFormat: outputFormat)
 
             guard let decoder else {
-                print("🔴 Could not create RadioDecoder")
+                debugLog("🔴 Could not create RadioDecoder")
                 return
             }
 
@@ -100,14 +110,14 @@ extension AudioEngine: RadioAudioParserDelegate {
 
     func radioAudioParser(_ parser: RadioAudioParser, didReceive data: Data, packetDescriptions: [AudioStreamPacketDescription]) {
         radioQueue.async { [weak self] in
-            guard let self, let decoder = self.radioDecoder,let pcm = decoder.decode(data: data, packetDescriptions:packetDescriptions)
-            else { return }
+            guard let self, let decoder = self.radioDecoder,
+                  let pcm = decoder.decode(data: data, packetDescriptions:packetDescriptions) else { return }
             self.scheduleRadioBuffer(pcm)
         }
     }
 
     func radioAudioParser(_ parser: RadioAudioParser, didFail status: OSStatus) {
-        print("🔴 AudioFileStream:", status)
+        debugLog("🔴 AudioFileStream:", status)
     }
 }
 
@@ -203,23 +213,14 @@ class AudioEngine: ObservableObject {
     @Published var radioTitle = ""
     @Published var streamTitle = ""
     @Published var radioBuffering = false
+    @Published private(set) var radioBitrate: Int = 0
+    @Published private(set) var radioSampleRate: Int = 0
     
     var radioDisplayTitle: String {
-        let station = radioTitle.trimmingCharacters(in: .whitespacesAndNewlines)
         let song = streamTitle.trimmingCharacters(in: .whitespacesAndNewlines)
-
-//        if !station.isEmpty && !song.isEmpty {
-//            return "\(station) - \(song)"
-//        }
-//
-//        if !station.isEmpty {
-//            return "\(station)"
-//        }
-
         if !song.isEmpty {
             return "\(song)"
         }
-
         return "LIVE"
     }
     
@@ -292,7 +293,7 @@ class AudioEngine: ObservableObject {
                 scheduleAndPlay()
             }
         } catch {
-            print("🔴 AudioEngine: failed to load \(url.lastPathComponent): \(error)")
+            debugLog("🔴 AudioEngine: failed to load \(url.lastPathComponent): \(error)")
         }
     }
 
@@ -338,7 +339,7 @@ class AudioEngine: ObservableObject {
     private func loadFile(url: URL) throws {
         audioFile = try AVAudioFile(forReading: url)
         guard let file = audioFile else {
-            print("🔴 loadFile: audioFile is nil after init")
+            debugLog("🔴 loadFile: audioFile is nil after init")
             return
         }
 
@@ -349,7 +350,7 @@ class AudioEngine: ObservableObject {
         needsScheduling = true
         currentSegmentStartFrame = 0
         currentSegmentEndFrame = 0
-        print("🔵 loadFile: file loaded, sampleRate=\(audioSampleRate), frames=\(audioLengthFrames), duration=\(duration)s")
+        debugLog("🔵 loadFile: file loaded, sampleRate=\(audioSampleRate), frames=\(audioLengthFrames), duration=\(duration)s")
     }
 
     func play() {
@@ -363,7 +364,7 @@ class AudioEngine: ObservableObject {
                     isPlaying = true
                     playState = .playing
                 } catch {
-                    print("AudioEngine: failed to resume radio:", error)
+                    debugLog("AudioEngine: failed to resume radio:", error)
                 }
                 return
             }
@@ -385,7 +386,7 @@ class AudioEngine: ObservableObject {
             playState = .playing
             startTimeUpdates()
         } catch {
-            print("AudioEngine: failed to start: \(error)")
+            debugLog("AudioEngine: failed to start: \(error)")
         }
     }
 
@@ -397,7 +398,7 @@ class AudioEngine: ObservableObject {
     }
 
     func stop() {
-        print("🟡 stop() called, gen=\(playbackGeneration), isPlaying=\(isPlaying)")
+        debugLog("🟡 stop() called, gen=\(playbackGeneration), isPlaying=\(isPlaying)")
         // radio stream
         radioStream?.stop()
         radioStream = nil
@@ -409,6 +410,8 @@ class AudioEngine: ObservableObject {
         isRadioStream = false
         radioTitle = ""
         streamTitle = ""
+        radioBitrate = 0
+        radioSampleRate = 0
         radioMagicCookie = nil
 
         playerNode.stop()
@@ -476,13 +479,13 @@ class AudioEngine: ObservableObject {
 
     private func scheduleSegment(endFrame: AVAudioFramePosition) {
         guard let file = audioFile else {
-            print("🔴 scheduleSegment: no audioFile")
+            debugLog("🔴 scheduleSegment: no audioFile")
             return
         }
         let framesToPlay = endFrame - seekFrame
-        print("🟢 scheduleSegment: framesToPlay=\(framesToPlay), seekFrame=\(seekFrame), endFrame=\(endFrame), gen=\(playbackGeneration)")
+        debugLog("🟢 scheduleSegment: framesToPlay=\(framesToPlay), seekFrame=\(seekFrame), endFrame=\(endFrame), gen=\(playbackGeneration)")
         guard framesToPlay > 0 else {
-            print("🔴 scheduleSegment: no frames to play, calling handleTrackCompletion")
+            debugLog("🔴 scheduleSegment: no frames to play, calling handleTrackCompletion")
             handleTrackCompletion()
             return
         }
@@ -514,9 +517,9 @@ class AudioEngine: ObservableObject {
     }
 
     private func handleTrackCompletion() {
-        print("🔴 handleTrackCompletion: isPlaying=\(isPlaying), repeatMode=\(repeatMode), gen=\(playbackGeneration)")
+        debugLog("🔴 handleTrackCompletion: isPlaying=\(isPlaying), repeatMode=\(repeatMode), gen=\(playbackGeneration)")
         guard isPlaying else {
-            print("🔴 handleTrackCompletion: NOT playing, ignoring")
+            debugLog("🔴 handleTrackCompletion: NOT playing, ignoring")
             return
         }
 
@@ -542,7 +545,7 @@ class AudioEngine: ObservableObject {
             currentSegmentStartFrame = pending.startFrame
             currentSegmentEndFrame = pending.endFrame
             pendingChain = nil
-            print("🟢 handleTrackCompletion: promoted chained segment [\(pending.startFrame), \(pending.endFrame)]")
+            debugLog("🟢 handleTrackCompletion: promoted chained segment [\(pending.startFrame), \(pending.endFrame)]")
             NotificationCenter.default.post(name: .trackDidFinish, object: nil,
                                             userInfo: [AudioEngine.gaplessChainedKey: true])
             return
@@ -551,7 +554,7 @@ class AudioEngine: ObservableObject {
         isPlaying = false
         playState = .stopped
         stopTimeUpdates()
-        print("🔴 handleTrackCompletion: posting .trackDidFinish")
+        debugLog("🔴 handleTrackCompletion: posting .trackDidFinish")
         NotificationCenter.default.post(name: .trackDidFinish, object: nil)
     }
 
@@ -722,6 +725,8 @@ class AudioEngine: ObservableObject {
         // radioTitle = (trimmedStation != "LIVE Internet Radio" && !trimmedStation.isEmpty) ? trimmedStation : ""
         radioTitle = trimmedStation
         streamTitle = ""
+        radioBitrate = 0
+        radioSampleRate = 0
         radioBuffering = true
         radioMagicCookie = nil
 
@@ -748,7 +753,7 @@ class AudioEngine: ObservableObject {
             }
 
         } catch {
-            print("🔴 Failed to start radio:", error)
+            debugLog("🔴 Failed to start radio:", error)
             isRadioStream = false
             radioBuffering = false
         }

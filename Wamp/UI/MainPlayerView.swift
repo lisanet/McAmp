@@ -335,8 +335,18 @@ class MainPlayerView: NSView {
         if let textSheet = WinampTheme.provider.textSheet,
            let track = playlistManager?.currentTrack {
             let textY: CGFloat = mainHeight - 43 - 6
-            let bitrateStr = track.bitrate > 0 ? String(format: "%3d", track.bitrate) : "   "
-            let sampleStr = track.sampleRate > 0 ? String(format: "%2d", track.sampleRate / 1000) : "  "
+            var bitrate: Int
+            var sampleRate: Int
+            if let engine = audioEngine, engine.isRadioStream {
+                bitrate = engine.radioBitrate
+                sampleRate = engine.radioSampleRate
+            } else {
+                bitrate = track.bitrate
+                sampleRate = track.sampleRate
+            }
+            let bitrateStr = bitrate > 0 ? String(format: "%3d", bitrate) : "   "
+            let sampleStr = sampleRate > 0 ? String(format: "%2d", sampleRate / 1000) : "  "
+ 
             TextSpriteRenderer.draw(bitrateStr, at: NSPoint(x: 111, y: textY), sheet: textSheet)
             TextSpriteRenderer.draw(sampleStr,  at: NSPoint(x: 156, y: textY), sheet: textSheet)
         }
@@ -538,6 +548,22 @@ class MainPlayerView: NSView {
             }
             .store(in: &cancellables)
 
+        audioEngine.$radioBitrate
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateTrackInfo()
+                self?.needsDisplay = true
+            }
+            .store(in: &cancellables)
+
+        audioEngine.$radioSampleRate
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateTrackInfo()
+                self?.needsDisplay = true
+            }
+            .store(in: &cancellables)
+        
         // Seek slider
         audioEngine.$duration
             .receive(on: DispatchQueue.main)
@@ -626,7 +652,6 @@ class MainPlayerView: NSView {
             sampleRateLabel.stringValue = ""
             return
         }
-        // let index = (playlistManager?.currentIndex ?? 0) + 1
 
         if (audioEngine?.isRadioStream == true) || track.isStream {
             let streamDisplay: String
@@ -639,10 +664,6 @@ class MainPlayerView: NSView {
             if lcdDisplay.text != newText {
                 lcdDisplay.text = newText
             }
-            bitrateLabel.stringValue = track.bitrate > 0 ? "\(track.bitrate)" : "---"
-            bitrateLabel.textColor = WinampTheme.greenBright
-            sampleRateLabel.stringValue = track.sampleRate > 0 ? "\(track.sampleRate / 1000)" : "--"
-            sampleRateLabel.textColor = WinampTheme.greenBright
         } else {
             let newText = "\(track.displayTitle) (\(track.formattedDuration))"
             if lcdDisplay.text != newText {
