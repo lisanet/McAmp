@@ -517,7 +517,11 @@ class PlaylistManager: ObservableObject {
         var lines: [String] = ["#EXTM3U"]
         for track in tracks {
             lines.append("#EXTINF:\(Int(track.duration.rounded())),\(track.displayTitle)")
-            lines.append(track.url.path)
+            if track.isStream {
+                lines.append(track.url.absoluteString)
+            } else {
+                lines.append(track.url.path)
+            }
         }
         let text = lines.joined(separator: "\n") + "\n"
         try? text.write(to: fileURL, atomically: true, encoding: .utf8)
