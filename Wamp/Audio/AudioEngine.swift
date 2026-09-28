@@ -266,8 +266,14 @@ class AudioEngine: ObservableObject {
         playbackGeneration &+= 1
 
         do {
-            try loadFile(url: url)
-
+            if let scheme = url.scheme?.lowercased() {
+                if scheme == "http" || scheme == "https" {
+                    isRadioStream = true
+                }
+            }
+            if !isRadioStream {
+                try loadFile(url: url)
+            }
             // return, if only loading is requested
             guard play else { return }
 
