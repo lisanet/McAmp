@@ -362,15 +362,7 @@ class PlaylistManager: ObservableObject {
         currentIndex = index
         let track = tracks[index]
         debugLog("⚡ playTrack(at: \(index)) — \(track.url)")
-        if track.isStream {
-            audioEngine?.load(url: track.url, play: true)
-            return
-        }
-        if let start = track.cueStart {
-            audioEngine?.load(url: track.url, play: true, startTime: start, endTime: track.cueEnd)
-        } else {
-            audioEngine?.load(url: track.url, play: true)
-        }
+        audioEngine?.load(url: track.url, play: true, startTime: track.cueStart, endTime: track.cueEnd)
         prepareGaplessChain(after: index)
     }
 
