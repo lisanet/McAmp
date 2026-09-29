@@ -195,22 +195,6 @@ class PlaylistManager: ObservableObject {
     /// playlist. Missing files are counted so callers can surface a warning; they are
     /// not added as placeholder tracks (the task spec prescribes greying-out on
     /// reload, not on initial import).
-    @discardableResult
-    func old_addM3U(url: URL) async throws -> M3UImportSummary {
-        let entries = try M3UParser.parse(url: url)
-        var present: [URL] = []
-        var missing = 0
-        for entry in entries {
-            if FileManager.default.fileExists(atPath: entry.url.path) {
-                present.append(entry.url)
-            } else {
-                missing += 1
-            }
-        }
-        let before = tracks.count
-        await addURLs(present)
-        return M3UImportSummary(imported: tracks.count - before, missing: missing)
-    }
 
     // helper for addM3U and loadPlaylistM3U
     private func m3uTracks(from entries: [M3UEntry]) async -> ( tracks: [Track], missing: Int) {
