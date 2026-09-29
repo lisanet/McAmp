@@ -268,7 +268,7 @@ class AudioEngine: ObservableObject {
         do {
             if let scheme = url.scheme?.lowercased() {
                 if scheme == "http" || scheme == "https" {
-                    isRadioStream = true
+                    loadStream(url: url)
                 }
             }
             if !isRadioStream {
@@ -282,24 +282,31 @@ class AudioEngine: ObservableObject {
             }
             installSpectrumTap()
 
-            // start playing, either with segment or without
-            if let startTime = startTime {
-                let startFrame = AVAudioFramePosition(startTime * audioSampleRate)
-                let endFrame: AVAudioFramePosition
-                if let endTime = endTime {
-                    endFrame = min(audioLengthFrames, AVAudioFramePosition(endTime * audioSampleRate))
-                } else {
-                    endFrame = audioLengthFrames
-                }
-                
-                seekFrame = max(0, min(startFrame, audioLengthFrames))
-                currentSegmentStartFrame = seekFrame
-                scheduleSegment(endFrame: endFrame)
+            if isRadioStream {
+                radioStream?.start(url: url)
             } else {
-                scheduleAndPlay()
+                // play audiofile
+                // start playing, either with segment or without
+                if let startTime = startTime {
+                    let startFrame = AVAudioFramePosition(startTime * audioSampleRate)
+                    let endFrame: AVAudioFramePosition
+                    if let endTime = endTime {
+                        endFrame = min(audioLengthFrames, AVAudioFramePosition(endTime * audioSampleRate))
+                    } else {
+                        endFrame = audioLengthFrames
+                    }
+                    
+                    seekFrame = max(0, min(startFrame, audioLengthFrames))
+                    currentSegmentStartFrame = seekFrame
+                    scheduleSegment(endFrame: endFrame)
+                } else {
+                    scheduleAndPlay()
+                }
             }
         } catch {
-            debugLog("🔴 AudioEngine: failed to load \(url.lastPathComponent): \(error)")
+            isRadioStream = false
+            radioBuffering = false
+            debugLog("🔴 failed to load \(url.lastPathComponent): \(error)")
         }
     }
 
@@ -706,11 +713,7 @@ class AudioEngine: ObservableObject {
     }
 
     // MARK: - Radio Streams
-    func loadStream(url: URL, stationTitle: String? = nil, play: Bool = true) {
-        stop()
-
-        playbackGeneration &+= 1
-
+    func loadStream(url: URL, station: String? = nil) {
         audioFile = nil
         duration = 0
         currentTime = 0
@@ -728,24 +731,11 @@ class AudioEngine: ObservableObject {
         radioPlaybackStarted = false
 
         do {
-            let parser = try RadioAudioParser()
-            parser.delegate = self
-            radioParser = parser
-
-            let stream = RadioStream()
-            stream.delegate = self
-            radioStream = stream
-
-            if !engine.isRunning {
-                try engine.start()
-            }
-
-            installSpectrumTap()
-
-            if play {
-                stream.start(url: url)
-            }
-
+            radioParser = try RadioAudioParser()
+            radioParser?.delegate = self
+            
+            radioStream = RadioStream()
+            radioStream?.delegate = self
         } catch {
             debugLog("🔴 Failed to start radio:", error)
             isRadioStream = false
