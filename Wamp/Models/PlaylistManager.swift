@@ -363,7 +363,7 @@ class PlaylistManager: ObservableObject {
         let track = tracks[index]
         debugLog("⚡ playTrack(at: \(index)) — \(track.url)")
         if track.isStream {
-            audioEngine?.loadStream(url: track.url, stationTitle: track.title, play: true)
+            audioEngine?.load(url: track.url, play: true)
             return
         }
         if let start = track.cueStart {
