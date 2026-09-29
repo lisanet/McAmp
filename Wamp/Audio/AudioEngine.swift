@@ -360,28 +360,16 @@ class AudioEngine: ObservableObject {
     }
 
     func play() {
-        if isRadioStream {
-                do {
-                    if !engine.isRunning {
-                        try engine.start()
-                    }
-                    installSpectrumTap()
-                    playerNode.play()
-                    isPlaying = true
-                    playState = .playing
-                } catch {
-                    debugLog("AudioEngine: failed to resume radio:", error)
-                }
-                return
-            }
+        guard isRadioStream || audioFile != nil else { return }
 
-        guard audioFile != nil else { return }
         do {
             if !engine.isRunning {
                 try engine.start()
             }
             installSpectrumTap()
-            if needsScheduling {
+            
+            let isAudioFile = (audioFile != nil) && !isRadioStream
+            if isAudioFile, needsScheduling {
                 // Respect the active CUE segment bound (set by a paused seek);
                 // scheduling to EOF here would bleed past the cue track's end.
                 scheduleSegment(endFrame: currentSegmentEndFrame > 0 ? currentSegmentEndFrame : audioLengthFrames)
@@ -390,9 +378,11 @@ class AudioEngine: ObservableObject {
             }
             isPlaying = true
             playState = .playing
-            startTimeUpdates()
+            if isAudioFile {
+                startTimeUpdates()
+            }
         } catch {
-            debugLog("AudioEngine: failed to start: \(error)")
+            debugLog("AudioEngine: failed to start:", error)
         }
     }
 
