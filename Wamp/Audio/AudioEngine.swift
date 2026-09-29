@@ -32,9 +32,9 @@ extension AudioEngine: RadioStreamDelegate {
             self?.radioParser?.parse(data)
         }
     }
-    func radioStream(_ stream: RadioStream, didReceiveRadioTitle title: String) {
+    func radioStream(_ stream: RadioStream, didReceiveStationTitle title: String) {
         DispatchQueue.main.async {
-            self.radioTitle = title
+            self.stationTitle = title
         }
     }
     func radioStream(_ stream: RadioStream, didReceiveStreamTitle title: String) {
@@ -210,7 +210,7 @@ class AudioEngine: ObservableObject {
     private var radioMagicCookie: Data?
 
     @Published var isRadioStream = false
-    @Published var radioTitle = ""
+    @Published var stationTitle = ""
     @Published var streamTitle = ""
     @Published var radioBuffering = false
     @Published private(set) var radioBitrate: Int = 0
@@ -221,7 +221,7 @@ class AudioEngine: ObservableObject {
         if !song.isEmpty {
             return "\(song)"
         }
-        return "LIVE"
+        return stationTitle
     }
     
     // MARK: - Init
@@ -414,7 +414,7 @@ class AudioEngine: ObservableObject {
         radioPlaybackStarted = false
         radioBuffering = false
         isRadioStream = false
-        radioTitle = ""
+        stationTitle = ""
         streamTitle = ""
         radioBitrate = 0
         radioSampleRate = 0
@@ -727,9 +727,7 @@ class AudioEngine: ObservableObject {
         seekFrame = 0
 
         isRadioStream = true
-        let trimmedStation = stationTitle?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        // radioTitle = (trimmedStation != "LIVE Internet Radio" && !trimmedStation.isEmpty) ? trimmedStation : ""
-        radioTitle = trimmedStation
+        stationTitle = ""
         streamTitle = ""
         radioBitrate = 0
         radioSampleRate = 0

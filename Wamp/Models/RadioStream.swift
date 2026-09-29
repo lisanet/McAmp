@@ -8,7 +8,7 @@ import Foundation
 
 protocol RadioStreamDelegate: AnyObject {
     func radioStream(_ stream: RadioStream, didReceiveAudio data: Data)
-    func radioStream(_ stream: RadioStream, didReceiveRadioTitle title: String)
+    func radioStream(_ stream: RadioStream, didReceiveStationTitle title: String)
     func radioStream(_ stream: RadioStream, didReceiveStreamTitle title: String)
     func radioStream(_ stream: RadioStream, didReceiveBitrate bitrate: Int)
     func radioStream(_ stream: RadioStream, didFail error: Error)
@@ -157,7 +157,7 @@ extension RadioStream: URLSessionDataDelegate {
                 let stationTitle = name.trimmingCharacters(in: .whitespacesAndNewlines)
                 debugLog("📻 Station:", stationTitle)
                 if !stationTitle.isEmpty {
-                    delegate?.radioStream(self, didReceiveRadioTitle: stationTitle)
+                    delegate?.radioStream(self, didReceiveStationTitle: stationTitle)
                 }
                 if let value = http.value(forHTTPHeaderField: "icy-br"),
                    let bitrate = Int(value.trimmingCharacters(in: .whitespacesAndNewlines)) {

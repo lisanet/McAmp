@@ -544,7 +544,7 @@ class MainPlayerView: NSView {
             .store(in: &cancellables)
 
         // Radio stream title info
-        Publishers.CombineLatest3(audioEngine.$isRadioStream, audioEngine.$radioTitle, audioEngine.$streamTitle)
+        Publishers.CombineLatest3(audioEngine.$isRadioStream, audioEngine.$stationTitle, audioEngine.$streamTitle)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] isRadioStream, _, _ in
                 if isRadioStream {
@@ -665,7 +665,7 @@ class MainPlayerView: NSView {
         if (audioEngine?.isRadioStream == true) || track.isStream {
             let streamDisplay: String
             if let engine = audioEngine, engine.isRadioStream {
-                streamDisplay = engine.radioDisplayTitle
+                streamDisplay = !engine.radioDisplayTitle.isEmpty ? engine.radioDisplayTitle : track.title
             } else {
                 streamDisplay = track.displayTitle
             }

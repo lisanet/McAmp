@@ -67,7 +67,7 @@ class HotKeyManager {
 
         if engine.isRadioStream || track.isStream {
             let song = engine.streamTitle.trimmingCharacters(in: .whitespacesAndNewlines)
-            let station = engine.radioTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+            let station = engine.stationTitle.trimmingCharacters(in: .whitespacesAndNewlines)
             title = !song.isEmpty ? song : (!station.isEmpty ? station : track.title)
             artist = !station.isEmpty ? station : (!track.artist.isEmpty && track.artist != "Unknown Artist" ? track.artist : "LIVE Internet Radio")
             duration = 0
