@@ -384,7 +384,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             .applicationVersion: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "",
             .version: Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "",
             .credits: credits,
-            NSApplication.AboutPanelOptionKey(rawValue: "Copyright"): "© 2026 Valerii Bakalenko."
+            NSApplication.AboutPanelOptionKey(rawValue: "Copyright"): "© 2026 - MIT License\nValerii Bakalenko\nSimone Karin Lehmann"
         ])
         NSApp.activate(ignoringOtherApps: true)
     }
