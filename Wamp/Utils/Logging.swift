@@ -7,9 +7,19 @@
 
 import Foundation
 
-func debugLog(_ items: Any..., separator: String = " ", terminator: String = "\n") {
+import Foundation
+
+func debugLog(
+    _ items: Any...,
+    separator: String = " ",
+    terminator: String = "\n",
+    function: String = #function,
+    file: String = #file,
+    line: Int = #line
+) {
     #if DEBUG
     let output = items.map { "\($0)" }.joined(separator: separator)
-    print(output, terminator: terminator)
+    let fileName = (file as NSString).lastPathComponent
+    print("[\(fileName):\(line)] \(function) → \(output)", terminator: terminator)
     #endif
 }
