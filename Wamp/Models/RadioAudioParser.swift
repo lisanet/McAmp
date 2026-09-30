@@ -58,14 +58,12 @@ final class RadioAudioParser {
     }
 
     func parse(_ data: Data) {
-        guard let streamID else {
-            return
-        }
+        guard let streamID else { return }
+        
         let status = data.withUnsafeBytes {
             bytes -> OSStatus in
-            guard let base = bytes.baseAddress else {
-                return noErr
-            }
+            guard let base = bytes.baseAddress else { return noErr}
+            
             return AudioFileStreamParseBytes(streamID, UInt32(data.count), base, [])
         }
 
@@ -98,13 +96,8 @@ private extension RadioAudioParser {
         var size = UInt32(MemoryLayout<AudioStreamBasicDescription>.size)
 
         let status = AudioFileStreamGetProperty(stream, kAudioFileStreamProperty_DataFormat, &size, &description)
-        guard status == noErr else {
-            return
-        }
-
-        guard let format = AVAudioFormat(streamDescription: &description) else {
-            return
-        }
+        guard status == noErr else { return }
+        guard let format = AVAudioFormat(streamDescription: &description) else { return }
 
         delegate?.radioAudioParser(self, didFindFormat: format)
     }
@@ -114,10 +107,7 @@ private extension RadioAudioParser {
         var writable = DarwinBoolean(false)
 
         let sizeStatus = AudioFileStreamGetPropertyInfo(stream, kAudioFileStreamProperty_MagicCookieData, &size,&writable)
-
-        guard sizeStatus == noErr, size > 0 else {
-            return
-        }
+        guard sizeStatus == noErr, size > 0 else { return }
 
         var cookie = Data(count: Int(size))
 
@@ -125,9 +115,7 @@ private extension RadioAudioParser {
             AudioFileStreamGetProperty(stream, kAudioFileStreamProperty_MagicCookieData, &size, bytes.baseAddress!)
         }
 
-        guard status == noErr else {
-            return
-        }
+        guard status == noErr else { return}
 
         delegate?.radioAudioParser(self, didFindMagicCookie: cookie)
     }
@@ -154,9 +142,7 @@ private extension RadioAudioParser {
 
     func handlePackets(numberBytes: UInt32, numberPackets: UInt32, inputData: UnsafeRawPointer, packetDescriptions:
             UnsafeMutablePointer<AudioStreamPacketDescription>?) {
-        guard numberPackets > 0 else {
-            return
-        }
+        guard numberPackets > 0 else { return}
 
         let data = Data(bytes: inputData, count: Int(numberBytes))
         var descriptions: [AudioStreamPacketDescription] = []
