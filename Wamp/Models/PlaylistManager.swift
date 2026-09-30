@@ -106,7 +106,7 @@ class PlaylistManager: ObservableObject {
                         newTracks.append(contentsOf: resolved)
                         continue
                     } catch {
-                        debugLog("🟡 addURLs: sibling .cue failed (\(error)), falling through")
+                        debugLog("🟡 sibling .cue failed (\(error)), falling through")
                     }
                 }
                 // Embedded CUESHEET.
@@ -120,7 +120,7 @@ class PlaylistManager: ObservableObject {
                         newTracks.append(contentsOf: resolved)
                         continue
                     } catch {
-                        debugLog("🟡 addURLs: embedded CUESHEET unusable (\(error)), falling through")
+                        debugLog("🟡 embedded CUESHEET unusable (\(error)), falling through")
                     }
                 }
             }
@@ -356,12 +356,12 @@ class PlaylistManager: ObservableObject {
     // MARK: - Playback Navigation
     func playTrack(at index: Int) {
         guard index >= 0, index < tracks.count else {
-            debugLog("⚡ playTrack: invalid index \(index), tracks.count=\(tracks.count)")
+            debugLog("⚡ invalid index \(index), tracks.count=\(tracks.count)")
             return
         }
         currentIndex = index
         let track = tracks[index]
-        debugLog("⚡ playTrack(at: \(index)) — \(track.url)")
+        debugLog("⚡ at: \(index)) — \(track.url)")
         audioEngine?.load(url: track.url, play: true, startTime: track.cueStart, endTime: track.cueEnd)
         prepareGaplessChain(after: index)
     }
@@ -392,7 +392,7 @@ class PlaylistManager: ObservableObject {
     }
 
     func playNext() {
-        debugLog("⚡ playNext: currentIndex=\(currentIndex), tracks.count=\(tracks.count)")
+        debugLog("⚡ currentIndex=\(currentIndex), tracks.count=\(tracks.count)")
         guard !tracks.isEmpty else { return }
 
         let nextIndex = currentIndex + 1
@@ -538,7 +538,7 @@ class PlaylistManager: ObservableObject {
 
     // MARK: - Private
     private func advanceToNext(engineChained: Bool = false) {
-        debugLog("⚡ advanceToNext: repeatMode=\(String(describing: audioEngine?.repeatMode)), chained=\(engineChained)")
+        debugLog("⚡ repeatMode=\(String(describing: audioEngine?.repeatMode)), chained=\(engineChained)")
         guard audioEngine?.repeatMode != .track else { return }
         guard !tracks.isEmpty else { return }
 

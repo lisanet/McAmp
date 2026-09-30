@@ -200,7 +200,7 @@ class AudioEngine: ObservableObject {
     private let spectrumDisplayCompression: Float = 0.5  // pow(amplitude, val) val = 1.0 = linear
     private let spectrumDisplayGain: Float = 4.5 // dB
     
-    /// Radio streams
+    // MARK: - Radio streams
     private var radioStream: RadioStream?
     private var radioParser: RadioAudioParser?
     private var radioDecoder: RadioDecoder?
@@ -352,7 +352,7 @@ class AudioEngine: ObservableObject {
     private func loadFile(url: URL) throws {
         audioFile = try AVAudioFile(forReading: url)
         guard let file = audioFile else {
-            debugLog("🔴 loadFile: audioFile is nil after init")
+            debugLog("🔴 audioFile is nil after init")
             return
         }
 
@@ -363,7 +363,7 @@ class AudioEngine: ObservableObject {
         needsScheduling = true
         currentSegmentStartFrame = 0
         currentSegmentEndFrame = 0
-        debugLog("🔵 loadFile: file loaded, sampleRate=\(audioSampleRate), frames=\(audioLengthFrames), duration=\(duration)s")
+        debugLog("🔵 file loaded, sampleRate=\(audioSampleRate), frames=\(audioLengthFrames), duration=\(duration)s")
     }
 
     func play() {
@@ -401,7 +401,7 @@ class AudioEngine: ObservableObject {
     }
 
     func stop() {
-        debugLog("🟡 stop() called, gen=\(playbackGeneration), isPlaying=\(isPlaying)")
+        debugLog("🟡 gen=\(playbackGeneration), isPlaying=\(isPlaying)")
         // radio stream
         radioStream?.stop()
         radioStream = nil
@@ -482,13 +482,13 @@ class AudioEngine: ObservableObject {
 
     private func scheduleSegment(endFrame: AVAudioFramePosition) {
         guard let file = audioFile else {
-            debugLog("🔴 scheduleSegment: no audioFile")
+            debugLog("🔴 no audioFile")
             return
         }
         let framesToPlay = endFrame - seekFrame
-        debugLog("🟢 scheduleSegment: framesToPlay=\(framesToPlay), seekFrame=\(seekFrame), endFrame=\(endFrame), gen=\(playbackGeneration)")
+        debugLog("🟢 framesToPlay=\(framesToPlay), seekFrame=\(seekFrame), endFrame=\(endFrame), gen=\(playbackGeneration)")
         guard framesToPlay > 0 else {
-            debugLog("🔴 scheduleSegment: no frames to play, calling handleTrackCompletion")
+            debugLog("🔴 no frames to play, calling handleTrackCompletion")
             handleTrackCompletion()
             return
         }
@@ -520,9 +520,9 @@ class AudioEngine: ObservableObject {
     }
 
     private func handleTrackCompletion() {
-        debugLog("🔴 handleTrackCompletion: isPlaying=\(isPlaying), repeatMode=\(repeatMode), gen=\(playbackGeneration)")
+        debugLog("🔴 isPlaying=\(isPlaying), repeatMode=\(repeatMode), gen=\(playbackGeneration)")
         guard isPlaying else {
-            debugLog("🔴 handleTrackCompletion: NOT playing, ignoring")
+            debugLog("🔴 NOT playing, ignoring")
             return
         }
 
@@ -548,7 +548,7 @@ class AudioEngine: ObservableObject {
             currentSegmentStartFrame = pending.startFrame
             currentSegmentEndFrame = pending.endFrame
             pendingChain = nil
-            debugLog("🟢 handleTrackCompletion: promoted chained segment [\(pending.startFrame), \(pending.endFrame)]")
+            debugLog("🟢 promoted chained segment [\(pending.startFrame), \(pending.endFrame)]")
             NotificationCenter.default.post(name: .trackDidFinish, object: nil,
                                             userInfo: [AudioEngine.gaplessChainedKey: true])
             return
@@ -557,7 +557,7 @@ class AudioEngine: ObservableObject {
         isPlaying = false
         playState = .stopped
         stopTimeUpdates()
-        debugLog("🔴 handleTrackCompletion: posting .trackDidFinish")
+        debugLog("🔴 posting .trackDidFinish")
         NotificationCenter.default.post(name: .trackDidFinish, object: nil)
     }
 
@@ -737,7 +737,7 @@ class AudioEngine: ObservableObject {
             radioStream = RadioStream()
             radioStream?.delegate = self
         } catch {
-            debugLog("🔴 Failed to start radio:", error)
+            debugLog("🔴 Failed to parse radio:", error)
             isRadioStream = false
             radioBuffering = false
         }
