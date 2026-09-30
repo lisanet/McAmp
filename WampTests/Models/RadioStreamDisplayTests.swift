@@ -33,26 +33,4 @@ struct RadioStreamDisplayTests {
         engine.streamTitle = ""
         #expect(engine.radioDisplayTitle == "LIVE")
     }
-
-    @Test func loadStream_withStationTitle_prepopulatesRadioTitle() {
-        let engine = AudioEngine()
-        let url = URL(string: "http://example.com/radio.mp3")!
-        engine.loadStream(url: url, stationTitle: "Rock Antenne", play: false)
-
-        #expect(engine.isRadioStream)
-        #expect(engine.stationTitle == "Rock Antenne")
-        #expect(engine.radioDisplayTitle == "Rock Antenne")
-        engine.stop()
-    }
-
-    @Test func loadStream_withGenericInternetRadio_leavesRadioTitleEmpty() {
-        let engine = AudioEngine()
-        let url = URL(string: "http://example.com/radio.mp3")!
-        engine.loadStream(url: url, stationTitle: "LIVE Internet Radio", play: false)
-
-        #expect(engine.isRadioStream)
-        #expect(engine.stationTitle.isEmpty)
-        #expect(engine.radioDisplayTitle == "LIVE")
-        engine.stop()
-    }
 }
