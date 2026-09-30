@@ -23,13 +23,13 @@ enum M3UParser {
         baseURL: URL,
         fileExtension: String = "m3u8"
     ) throws -> [M3UEntry] {
-        let text = try decode(data, fileExtension: fileExtension)
-        return parseText(text, baseURL: baseURL)
+        let text = try decode(data)
+        return parseText(text, baseURL: baseURL, fileExtension: fileExtension)
     }
 
     // MARK: - Decoding
 
-    private static func decode(_ data: Data, fileExtension: String) throws -> String {
+    private static func decode(_ data: Data) throws -> String {
         var body = data
         if body.starts(with: [0xEF, 0xBB, 0xBF]) {
             body = body.dropFirst(3)
@@ -53,7 +53,20 @@ enum M3UParser {
 
     // MARK: - Text parsing
 
-    private static func parseText(_ text: String, baseURL: URL) -> [M3UEntry] {
+    private static func parseText(_ text: String, baseURL: URL, fileExtension: String) -> [M3UEntry] {
+        var entries: [M3UEntry] = []
+        switch fileExtension {
+        case "m3u", "m3u8":
+            entries = parseTextM3U(text, baseURL: baseURL)
+        case "pls":
+            entries = parseTextPLS(text, baseURL: baseURL)
+        default:
+            break
+        }
+        return entries
+    }
+    
+    private static func parseTextM3U(_ text: String, baseURL: URL) -> [M3UEntry] {
         var entries: [M3UEntry] = []
         var pendingDuration: TimeInterval?
         var pendingTitle: String?
@@ -84,24 +97,63 @@ enum M3UParser {
         return entries
     }
 
+    private static func parseTextPLS(_ text: String, baseURL: URL) -> [M3UEntry] {
+        var entries: [M3UEntry] = []
+        var files: [Int: String] = [:]
+        var titles: [Int: String] = [:]
+        var duration: [Int: String] = [:]
+        var pendingDuration: TimeInterval = 0
+        var pendingTitle: String?
+
+        for rawLine in splitLines(text) {
+            let line = rawLine.trimmingCharacters(in: .whitespaces)
+            if line.isEmpty || line.hasPrefix(";") || line.hasPrefix("[") { continue }
+            
+            guard let eq = line.firstIndex(of: "=") else  { continue }
+            
+            let key = line[..<eq].trimmingCharacters(in: .whitespaces).lowercased()
+            let value = line[line.index(after: eq)...].trimmingCharacters(in: .whitespaces)
+    
+            if key.hasPrefix("file"), let index = Int(key.dropFirst(4)) {
+                files[index] = value
+            } else if key.hasPrefix("title"), let index = Int(key.dropFirst(5)) {
+                titles[index] = value
+            } else if key.hasPrefix("length"), let index = Int(key.dropFirst(6)) {
+                duration[index] = value
+            }
+        }
+            
+        _ = files.keys.sorted().compactMap { index in
+            if let file = files[index], !file.isEmpty {
+                pendingDuration = max(0, TimeInterval(duration[index] ?? "0") ?? 0)
+                pendingTitle = titles[index]
+                if let resolved = resolveURL(file, baseURL: baseURL) {
+                    entries.append(M3UEntry(
+                        url: resolved,
+                        duration: pendingDuration,
+                        title: pendingTitle
+                    ))
+                }
+                pendingDuration = 0
+                pendingTitle = nil
+            }
+        }
+        return entries
+    }
+
+    
     private static func parseExtInf(_ line: String) -> (TimeInterval?, String?) {
         // Format: #EXTINF:<duration>[,<title>]
         let afterPrefix = line.dropFirst("#EXTINF:".count)
         let parts = afterPrefix.split(separator: ",", maxSplits: 1, omittingEmptySubsequences: false)
         let durationStr = parts[0].trimmingCharacters(in: .whitespaces)
-        let duration: TimeInterval?
-        if let d = Double(durationStr), d >= 0 {
-            duration = d
-        } else {
-            duration = nil
-        }
-        let title: String?
-        if parts.count == 2 {
-            let t = String(parts[1]).trimmingCharacters(in: .whitespaces)
-            title = t.isEmpty ? nil : t
-        } else {
-            title = nil
-        }
+        
+        var duration: TimeInterval
+        duration = max(0, TimeInterval(durationStr) ?? 0)
+        
+        let t = parts.count == 2 ? String(parts[1]).trimmingCharacters(in: .whitespaces) : ""
+        let title = t.isEmpty ? nil : t
+        
         return (duration, title)
     }
 

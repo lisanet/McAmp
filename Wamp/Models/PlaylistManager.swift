@@ -507,49 +507,17 @@ class PlaylistManager: ObservableObject {
     /// Returns an import summary (present vs missing entry count).
     @discardableResult
     func loadPlaylistM3U(from fileURL: URL) async -> M3UImportSummary {
-//        let ext = fileURL.pathExtension.lowercased()
-//        var urls: [URL] = []
-//        var missing = 0
-//        if ext == "pls" {
-//            guard let text = try? String(contentsOf: fileURL, encoding: .utf8) else {
-//                return M3UImportSummary(imported: 0, missing: 0)
-//            }
-//            let baseDir = fileURL.deletingLastPathComponent()
-//            for line in text.components(separatedBy: .newlines) {
-//                let trimmed = line.trimmingCharacters(in: .whitespaces)
-//                guard trimmed.lowercased().hasPrefix("file"),
-//                      let eq = trimmed.firstIndex(of: "=") else { continue }
-//                let value = String(trimmed[trimmed.index(after: eq)...]).trimmingCharacters(in: .whitespaces)
-//                let candidate = resolvePLSEntry(value, baseDir: baseDir)
-//                if candidate.isFileURL, !FileManager.default.fileExists(atPath: candidate.path) {
-//                    missing += 1
-//                } else {
-//                    urls.append(candidate)
-//                }
-//            }
-//        } else {
         var present: [Track] = []
         var missing = 0
         
-            guard let entries = try? M3UParser.parse(url: fileURL) else {
-                return M3UImportSummary(imported: 0, missing: 0)
-            }
-            (present, missing) = await m3uTracks(from: entries)
-//            for entry in entries {
-//                if FileManager.default.fileExists(atPath: entry.url.path) {
-//                    urls.append(entry.url)
-//                } else {
-//                    missing += 1
-//                }
-//            }
-//        }
+        guard let entries = try? M3UParser.parse(url: fileURL) else {
+            return M3UImportSummary(imported: 0, missing: 0)
+        }
+        
+        (present, missing) = await m3uTracks(from: entries)
         clearPlaylist()
-        let before = tracks.count
-        // await addURLs(urls)
-        // return M3UImportSummary(imported: tracks.count - before, missing: missing)
-
         addTracks(present)
-        return M3UImportSummary(imported: tracks.count - before, missing: missing)
+        return M3UImportSummary(imported: present.count, missing: missing)
     }
 
     private func resolvePLSEntry(_ entry: String, baseDir: URL) -> URL {
