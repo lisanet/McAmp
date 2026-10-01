@@ -94,6 +94,14 @@ enum SkinParserUtils {
         if let nums_ex = loadImage(named: "nums_ex", from: entries) {
             images["numbers"] = nums_ex
         }
+        // skin with german umlaut ü intead of å at pos(2,0) in textu.bmp
+        if let textu = loadImage(named: "textu", from: entries) {
+            images["text"] = textu
+            TextSpriteRenderer.useGermanUmlaut(true)
+        } else {
+            TextSpriteRenderer.useGermanUmlaut(false)
+        }
+            
         return images
     }
 }

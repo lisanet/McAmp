@@ -13,7 +13,7 @@ enum TextSpriteRenderer {
     /// Lowercase is canonical — uppercase input is lowercased before lookup.
     /// Layout: 3 rows of 31 columns each. Row 0 = a-z + " @  ", row 1 = digits + punctuation,
     /// row 2 = Å Ö Ä ? *. Ported verbatim from Webamp's FONT_LOOKUP.
-    private static let lookup: [Character: (row: Int, col: Int)] = [
+    private static var lookup: [Character: (row: Int, col: Int)] = [
         "a": (0, 0),  "b": (0, 1),  "c": (0, 2),  "d": (0, 3),  "e": (0, 4),  "f": (0, 5),
         "g": (0, 6),  "h": (0, 7),  "i": (0, 8),  "j": (0, 9),  "k": (0, 10), "l": (0, 11),
         "m": (0, 12), "n": (0, 13), "o": (0, 14), "p": (0, 15), "q": (0, 16), "r": (0, 17),
@@ -30,7 +30,6 @@ enum TextSpriteRenderer {
         "%": (1, 26), ",": (1, 27), "=": (1, 28), "$": (1, 29), "#": (1, 30),
 
         "ü": (0, 20), "ö": (2, 1), "ä": (2, 2), "?": (2, 3), "*": (2, 4), // ü mapped to u
-//        "ü": (2, 0), "ö": (2, 1), "ä": (2, 2), "?": (2, 3), "*": (2, 4), // skl edited skins with german umlaut ü
         "à": (0, 0), "á": (0, 0), "â": (0, 0), "ã": (0, 0), "å": (0, 0),
         "ç": (0, 2),
         "è": (0, 4), "é": (0, 4), "ê": (0, 4), "ë": (0, 4),
@@ -39,16 +38,20 @@ enum TextSpriteRenderer {
         "ò": (0, 14), "ó": (0, 14), "ô": (0, 14), "õ": (0, 14), "ø": (0, 14),
         "ù": (0, 20), "ú": (0, 20), "û": (0, 20),
         "ÿ": (0, 24),
-        
     ]
+    
+    static func useGermanUmlaut(_ hasUmlaut: Bool) {
+        // skin with german umlaut ü intead of å at pos(2,0) in textu.bmp
+        if hasUmlaut {
+            lookup["ü"] = (2, 0)
+        } else {
+            lookup["ü"] = (0, 20)
+        }
+    }
 
     /// Returns the rect inside text.bmp for `char`, or nil if unsupported.
     /// (Coordinates are in Winamp Y-down — y measured from top of the sheet.)
     static func glyphRect(for char: Character) -> CGRect? {
-        // Try as-is, then lowercased
-        if let pos = lookup[char] {
-            return rect(row: pos.row, col: pos.col)
-        }
         if let lc = char.lowercased().first, let pos = lookup[lc] {
             return rect(row: pos.row, col: pos.col)
         }
