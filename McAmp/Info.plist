@@ -67,7 +67,7 @@
 	<key>LSMinimumSystemVersion</key>
 	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
 	<key>NSAppleMusicUsageDescription</key>
-	<string>Wamp reads your Music library so it can import local tracks and playlists. Nothing is uploaded or streamed.</string>
+	<string>McAmp reads your Music library so it can import local tracks and playlists. Nothing is uploaded or streamed.</string>
 	<key>NSHumanReadableCopyright</key>
 	<string></string>
 	<key>NSPrincipalClass</key>

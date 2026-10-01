@@ -21,34 +21,34 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		1C49CD9F2F817D2700DB292D /* Wamp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Wamp.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		1CC1702A2F8B04F300BDC56D /* WampTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WampTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		1C49CD9F2F817D2700DB292D /* McAmp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = McAmp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1CC1702A2F8B04F300BDC56D /* McAmpTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = McAmpTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		1C49CDB02F817D2800DB292D /* Exceptions for "Wamp" folder in "Wamp" target */ = {
+		1C49CDB02F817D2800DB292D /* Exceptions for "McAmp" folder in "McAmp" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = 1C49CD9E2F817D2700DB292D /* Wamp */;
+			target = 1C49CD9E2F817D2700DB292D /* McAmp */;
 		};
-		AAAA00000000000000000001 /* Exceptions for "WampTests" folder in "WampTests" target */ = {
+		AAAA00000000000000000001 /* Exceptions for "McAmpTests" folder in "McAmpTests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				"Fixtures/generate-sample.swift",
 			);
-			target = 1CC170292F8B04F300BDC56D /* WampTests */;
+			target = 1CC170292F8B04F300BDC56D /* McAmpTests */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		1C49CDA12F817D2700DB292D /* Wamp */ = {
+		1C49CDA12F817D2700DB292D /* McAmp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				1C49CDB02F817D2800DB292D /* Exceptions for "Wamp" folder in "Wamp" target */,
+				1C49CDB02F817D2800DB292D /* Exceptions for "McAmp" folder in "McAmp" target */,
 			);
-			path = Wamp;
+			path = McAmp;
 			sourceTree = "<group>";
 		};
 		1CBE1BF22F895EF2004EA23A /* skins */ = {
@@ -56,12 +56,12 @@
 			path = skins;
 			sourceTree = "<group>";
 		};
-		1CC1702B2F8B04F300BDC56D /* WampTests */ = {
+		1CC1702B2F8B04F300BDC56D /* McAmpTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				AAAA00000000000000000001 /* Exceptions for "WampTests" folder in "WampTests" target */,
+				AAAA00000000000000000001 /* Exceptions for "McAmpTests" folder in "McAmpTests" target */,
 			);
-			path = WampTests;
+			path = McAmpTests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -88,8 +88,8 @@
 		1C49CD962F817D2700DB292D = {
 			isa = PBXGroup;
 			children = (
-				1C49CDA12F817D2700DB292D /* Wamp */,
-				1CC1702B2F8B04F300BDC56D /* WampTests */,
+				1C49CDA12F817D2700DB292D /* McAmp */,
+				1CC1702B2F8B04F300BDC56D /* McAmpTests */,
 				1C49CDA02F817D2700DB292D /* Products */,
 				1CBE1BF22F895EF2004EA23A /* skins */,
 			);
@@ -98,8 +98,8 @@
 		1C49CDA02F817D2700DB292D /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				1C49CD9F2F817D2700DB292D /* Wamp.app */,
-				1CC1702A2F8B04F300BDC56D /* WampTests.xctest */,
+				1C49CD9F2F817D2700DB292D /* McAmp.app */,
+				1CC1702A2F8B04F300BDC56D /* McAmpTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -107,9 +107,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		1C49CD9E2F817D2700DB292D /* Wamp */ = {
+		1C49CD9E2F817D2700DB292D /* McAmp */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 1C49CDAB2F817D2800DB292D /* Build configuration list for PBXNativeTarget "Wamp" */;
+			buildConfigurationList = 1C49CDAB2F817D2800DB292D /* Build configuration list for PBXNativeTarget "McAmp" */;
 			buildPhases = (
 				1C49CD9B2F817D2700DB292D /* Sources */,
 				1C49CD9C2F817D2700DB292D /* Frameworks */,
@@ -120,20 +120,20 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				1C49CDA12F817D2700DB292D /* Wamp */,
+				1C49CDA12F817D2700DB292D /* McAmp */,
 				1CBE1BF22F895EF2004EA23A /* skins */,
 			);
-			name = Wamp;
+			name = McAmp;
 			packageProductDependencies = (
 				1CBE1BFC2F8974A9004EA23A /* ZIPFoundation */,
 			);
 			productName = Wamp;
-			productReference = 1C49CD9F2F817D2700DB292D /* Wamp.app */;
+			productReference = 1C49CD9F2F817D2700DB292D /* McAmp.app */;
 			productType = "com.apple.product-type.application";
 		};
-		1CC170292F8B04F300BDC56D /* WampTests */ = {
+		1CC170292F8B04F300BDC56D /* McAmpTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 1CC170322F8B04F300BDC56D /* Build configuration list for PBXNativeTarget "WampTests" */;
+			buildConfigurationList = 1CC170322F8B04F300BDC56D /* Build configuration list for PBXNativeTarget "McAmpTests" */;
 			buildPhases = (
 				1CC170262F8B04F300BDC56D /* Sources */,
 				1CC170272F8B04F300BDC56D /* Frameworks */,
@@ -145,13 +145,13 @@
 				1CC1702F2F8B04F300BDC56D /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				1CC1702B2F8B04F300BDC56D /* WampTests */,
+				1CC1702B2F8B04F300BDC56D /* McAmpTests */,
 			);
-			name = WampTests;
+			name = McAmpTests;
 			packageProductDependencies = (
 			);
 			productName = WampTests;
-			productReference = 1CC1702A2F8B04F300BDC56D /* WampTests.xctest */;
+			productReference = 1CC1702A2F8B04F300BDC56D /* McAmpTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
@@ -173,7 +173,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 1C49CD9A2F817D2700DB292D /* Build configuration list for PBXProject "Wamp" */;
+			buildConfigurationList = 1C49CD9A2F817D2700DB292D /* Build configuration list for PBXProject "McAmp" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -190,8 +190,8 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				1C49CD9E2F817D2700DB292D /* Wamp */,
-				1CC170292F8B04F300BDC56D /* WampTests */,
+				1C49CD9E2F817D2700DB292D /* McAmp */,
+				1CC170292F8B04F300BDC56D /* McAmpTests */,
 			);
 		};
 /* End PBXProject section */
@@ -233,7 +233,7 @@
 /* Begin PBXTargetDependency section */
 		1CC1702F2F8B04F300BDC56D /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 1C49CD9E2F817D2700DB292D /* Wamp */;
+			target = 1C49CD9E2F817D2700DB292D /* McAmp */;
 			targetProxy = 1CC1702E2F8B04F300BDC56D /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -367,7 +367,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_APP_SANDBOX = NO;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = Wamp/Info.plist;
+				INFOPLIST_FILE = McAmp/Info.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -375,7 +375,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = "2.1.0-skl";
-				PRODUCT_BUNDLE_IDENTIFIER = com.bakalenkovalerii.Wamp;
+				PRODUCT_BUNDLE_IDENTIFIER = de.lisanet.McAmp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -397,7 +397,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_APP_SANDBOX = NO;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = Wamp/Info.plist;
+				INFOPLIST_FILE = McAmp/Info.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -405,7 +405,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = "2.1.0-skl";
-				PRODUCT_BUNDLE_IDENTIFIER = com.bakalenkovalerii.Wamp;
+				PRODUCT_BUNDLE_IDENTIFIER = de.lisanet.McAmp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -432,7 +432,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Wamp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Wamp";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/McAmp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/McAmp";
 			};
 			name = Debug;
 		};
@@ -451,14 +451,14 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Wamp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Wamp";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/McAmp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/McAmp";
 			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		1C49CD9A2F817D2700DB292D /* Build configuration list for PBXProject "Wamp" */ = {
+		1C49CD9A2F817D2700DB292D /* Build configuration list for PBXProject "McAmp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				1C49CDA92F817D2800DB292D /* Debug */,
@@ -467,7 +467,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		1C49CDAB2F817D2800DB292D /* Build configuration list for PBXNativeTarget "Wamp" */ = {
+		1C49CDAB2F817D2800DB292D /* Build configuration list for PBXNativeTarget "McAmp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				1C49CDAC2F817D2800DB292D /* Debug */,
@@ -476,7 +476,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		1CC170322F8B04F300BDC56D /* Build configuration list for PBXNativeTarget "WampTests" */ = {
+		1CC170322F8B04F300BDC56D /* Build configuration list for PBXNativeTarget "McAmpTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				1CC170302F8B04F300BDC56D /* Debug */,
