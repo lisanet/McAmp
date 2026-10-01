@@ -42,13 +42,18 @@ mkdir -p "$RELEASE_DIR"
 rm -f "$DMG_PATH"
 
 echo "Creating $DMG_PATH"
-hdiutil create \
-  -volname "$APP_NAME" \
-  -srcfolder "$STAGING" \
-  -ov \
-  -format UDZO \
-  -imagekey zlib-level=9 \
-  "$DMG_PATH" >/dev/null
+#hdiutil create \
+#  -volname "$APP_NAME" \
+#  -srcfolder "$STAGING" \
+#  -ov \
+#  -format UDZO \
+#  -imagekey zlib-level=9 \
+#  "$DMG_PATH" >/dev/null
+
+diskutil image create from --volumeName "$APP_NAME" \
+  --format UDZO \
+  "$STAGING" "$DMG_PATH" >/dev/null
+
 
 hdiutil verify "$DMG_PATH" >/dev/null
 
