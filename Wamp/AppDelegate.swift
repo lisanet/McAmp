@@ -543,6 +543,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = false
 
+        // get path to ~/Documents/WinAmp Skins
+        let fileManager = FileManager.default
+        if let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first {
+            let skinsURL = documentsURL.appendingPathComponent("WinAmp Skins")
+            
+            // does 'WinAmp Skins' exist
+            var isDirectory: ObjCBool = false
+            if fileManager.fileExists(atPath: skinsURL.path, isDirectory: &isDirectory) && isDirectory.boolValue {
+                panel.directoryURL = skinsURL
+            }
+        }
+        
         guard panel.runModal() == .OK, let url = panel.url else { return }
 
         Task { @MainActor [weak self] in
