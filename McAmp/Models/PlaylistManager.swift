@@ -482,13 +482,6 @@ class PlaylistManager: ObservableObject {
         try? text.write(to: fileURL, atomically: true, encoding: .utf8)
     }
 
-    /// Load an M3U/M3U8/PLS playlist, replacing the current track list.
-    /// Returns an import summary (present vs missing entry count).
-    @discardableResult
-    func loadPlaylistM3U(from fileURL: URL) async -> M3UImportSummary {
-        return await addM3U(url: fileURL, clear: true)
-    }
-
     private func resolvePLSEntry(_ entry: String, baseDir: URL) -> URL {
         if let url = URL(string: entry), url.scheme != nil { return url }
         if entry.hasPrefix("/") { return URL(fileURLWithPath: entry) }
