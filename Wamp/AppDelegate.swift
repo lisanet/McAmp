@@ -148,12 +148,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     presentError(error, context: "Opening \(url.lastPathComponent)")
                 }
             case "m3u", "m3u8", "pls":
-                do {
-                    let summary = try await playlistManager.addM3U(url: url)
-                    totalMissing += summary.missing
-                } catch {
-                    presentError(error, context: "Opening \(url.lastPathComponent)")
-                }
+                let summary = await playlistManager.addM3U(url: url)
+                totalMissing += summary.missing
             default:
                 passthrough.append(url)
             }

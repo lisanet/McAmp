@@ -662,7 +662,8 @@ class PlaylistView: NSView {
         panel.begin { [weak self] response in
             guard response == .OK, let url = panel.url else { return }
             Task { @MainActor in
-                await self?.playlistManager?.loadPlaylistM3U(from: url)
+                //await self?.playlistManager?.loadPlaylistM3U(from: url)
+                await self?.playlistManager?.addM3U(url: url, clear: true)
             }
         }
     }

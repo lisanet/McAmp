@@ -196,7 +196,7 @@ class PlaylistManager: ObservableObject {
     /// not added as placeholder tracks (the task spec prescribes greying-out on
     /// reload, not on initial import).
 
-    // helper for addM3U and loadPlaylistM3U
+    // helper for addM3U
     private func m3uTracks(from entries: [M3UEntry]) async -> ( tracks: [Track], missing: Int) {
         var result: [Track] = []
         var missing = 0
@@ -233,38 +233,17 @@ class PlaylistManager: ObservableObject {
     
     
     @discardableResult
-    func addM3U(url: URL) async throws -> M3UImportSummary {
-        let entries = try M3UParser.parse(url: url)
+    func addM3U(url: URL, clear: Bool = false) async -> M3UImportSummary {
         var present: [Track] = []
         var missing = 0
-
-        for entry in entries {
-            if let scheme = entry.url.scheme?.lowercased(), scheme == "http" || scheme == "https" {
-                let title =
-                    entry.title ??
-                    entry.url.host ??
-                    "LIVE Internet Radio"
-                let track = Track(
-                    url: entry.url,
-                    title: title,
-                    artist: "",
-                    album: "",
-                    duration: entry.duration ?? 0,
-                    genre: "Radio",
-                    bitrate: 0,
-                    sampleRate: 0,
-                    channels: 2
-                )
-                present.append(track)
-                continue
-            }
-            // Lokale Datei
-            guard FileManager.default.fileExists(atPath: entry.url.path) else {
-                missing += 1
-                continue
-            }
-            let track = await Track.fromURL(entry.url)
-            present.append(track)
+        guard let entries = try? M3UParser.parse(url: url) else {
+            return M3UImportSummary(imported: 0, missing: 0)
+        }
+        
+        (present, missing) = await m3uTracks(from: entries)
+        
+        if clear {
+            clearPlaylist()
         }
         addTracks(present)
         return M3UImportSummary(imported: present.count, missing: missing)
@@ -507,17 +486,7 @@ class PlaylistManager: ObservableObject {
     /// Returns an import summary (present vs missing entry count).
     @discardableResult
     func loadPlaylistM3U(from fileURL: URL) async -> M3UImportSummary {
-        var present: [Track] = []
-        var missing = 0
-        
-        guard let entries = try? M3UParser.parse(url: fileURL) else {
-            return M3UImportSummary(imported: 0, missing: 0)
-        }
-        
-        (present, missing) = await m3uTracks(from: entries)
-        clearPlaylist()
-        addTracks(present)
-        return M3UImportSummary(imported: present.count, missing: missing)
+        return await addM3U(url: fileURL, clear: true)
     }
 
     private func resolvePLSEntry(_ entry: String, baseDir: URL) -> URL {
