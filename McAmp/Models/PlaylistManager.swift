@@ -1,5 +1,7 @@
 import Foundation
+import AppKit
 import Combine
+import UniformTypeIdentifiers
 
 class PlaylistManager: ObservableObject {
     @Published var tracks: [Track] = []
@@ -68,6 +70,40 @@ class PlaylistManager: ObservableObject {
     }
 
     // MARK: - Track Management
+    func openFileFolderList() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = true
+        panel.allowedContentTypes = [.folder,
+                                     .audio, .mp3, .mpeg4Audio, .wav, .aiff,
+                                     UTType(filenameExtension: "m3u"),
+                                     UTType(filenameExtension: "m3u8"),
+                                     UTType(filenameExtension: "pls")].compactMap { $0 }
+        panel.begin { [weak self] response in
+            guard response == .OK else { return }
+            Task { @MainActor in
+                for url in panel.urls {
+                    let ext = url.pathExtension.lowercased()
+                    var isDir: ObjCBool = false
+                    FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir)
+                    if isDir.boolValue {
+                        await self?.addFolder(url)
+                        debugLog("addFolder")
+                    } else {
+                        if ext == "m3u" || ext == "m3u8" || ext == "pls" {
+                            await self?.addM3U(url: url)
+                            debugLog("addM3U")
+                        } else {
+                            await self?.addURLs([url])
+                            debugLog("addURLs")
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
     func addTracks(_ newTracks: [Track]) {
         var oldCount = tracks.count
         let oldIndex = currentIndex
