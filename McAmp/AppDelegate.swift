@@ -227,9 +227,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let quit = item("Quit Wamp", #selector(NSApplication.terminate(_:)), "q", symbol: "power")
 
         // File
-        let openFile = item("Open File…", #selector(openFileAction), "o", symbol: "doc")
-        let openFolder = item("Open Folder…", #selector(openFolderAction), "O", symbol: "folder")
-        openFolder.keyEquivalentModifierMask = [.command, .shift]
+        let openFile = item("Open…", #selector(openFileAction), "o", symbol: "doc")
         let newList = item("New List", #selector(newListAction), "n", symbol: "")
         let loadList = item("Load List…", #selector(loadListAction), "l", symbol: "")
         let saveList = item("SaveList…", #selector(saveListAction), "", symbol: "")
@@ -291,7 +289,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         return AppMenuItems(
             app: [about, .separator()],
-            file: [openFile, openFolder, importMusic, .separator(),
+            file: [openFile, importMusic, .separator(),
                    newList, loadList, saveList, .separator(),
                    loadSkin, unloadSkin],
             edit: [selectAll],
@@ -386,14 +384,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func openFileAction() {
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = true
-        panel.canChooseDirectories = false
-        panel.allowsMultipleSelection = true
-        panel.begin { [weak self] response in
-            guard response == .OK else { return }
-            Task { await self?.handleOpenURLs(panel.urls) }
-        }
+        playlistManager.openFileFolderList()
     }
 
     private var importMusicController: ImportMusicLibraryWindowController?
@@ -447,16 +438,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         alert.runModal()
     }
 
-    @objc private func openFolderAction() {
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = false
-        panel.canChooseDirectories = true
-        panel.begin { [weak self] response in
-            guard response == .OK, let url = panel.url else { return }
-            Task { await self?.playlistManager.addFolder(url) }
-        }
-    }
-    
     @objc private func newListAction() { mainWindow.playlistView.listOptsNew() }
     @objc private func loadListAction() { mainWindow.playlistView.listOptsLoad() }
     @objc private func saveListAction() { mainWindow.playlistView.listOptsSave() }
