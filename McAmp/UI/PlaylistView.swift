@@ -484,12 +484,9 @@ class PlaylistView: NSView {
     private func popUpMenu(_ menu: NSMenu, for kind: MenuKind) {
         menu.popUp(positioning: nil, at: menuAnchor(for: kind), in: self)
     }
-
+    
     private func showAddMenu() {
-        let menu = NSMenu()
-        menu.addItem(menuItem("Add Files...",  action: #selector(addFiles)))
-        menu.addItem(menuItem("Add Folder...", action: #selector(addFolder)))
-        popUpMenu(menu, for: .add)
+        playlistManager?.openFileFolderList()
     }
 
     private func showRemMenu() {
@@ -625,20 +622,6 @@ class PlaylistView: NSView {
         NSWorkspace.shared.activateFileViewerSelecting([url])
     }
 
-    @objc private func addFiles() {
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = true
-        panel.canChooseDirectories = false
-        panel.allowsMultipleSelection = true
-        panel.allowedContentTypes = [.audio, .mp3, .mpeg4Audio, .wav, .aiff]
-        panel.begin { [weak self] response in
-            guard response == .OK else { return }
-            Task { @MainActor in
-                await self?.playlistManager?.addURLs(panel.urls)
-            }
-        }
-    }
-
     private func showListOptsMenu() {
         let menu = NSMenu()
         menu.addItem(menuItem("New list",    action: #selector(listOptsNew)))
@@ -677,18 +660,18 @@ class PlaylistView: NSView {
         }
     }
 
-    @objc private func addFolder() {
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = false
-        panel.canChooseDirectories = true
-        panel.allowsMultipleSelection = false
-        panel.begin { [weak self] response in
-            guard response == .OK, let url = panel.url else { return }
-            Task { @MainActor in
-                await self?.playlistManager?.addFolder(url)
-            }
-        }
-    }
+//    @objc private func addFolder() {
+//        let panel = NSOpenPanel()
+//        panel.canChooseFiles = false
+//        panel.canChooseDirectories = true
+//        panel.allowsMultipleSelection = false
+//        panel.begin { [weak self] response in
+//            guard response == .OK, let url = panel.url else { return }
+//            Task { @MainActor in
+//                await self?.playlistManager?.addFolder(url)
+//            }
+//        }
+//    }
 
     // MARK: - Skinned bottom-button rects
     // Baked-button positions measured from PLEDIT.BMP bottom-left corner sprite

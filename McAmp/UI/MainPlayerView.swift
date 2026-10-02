@@ -627,7 +627,7 @@ class MainPlayerView: NSView {
             }
             playlistManager?.playNext()
         }
-        transportBar.onEject = { [weak self] in self?.showOpenFilePanel() }
+        transportBar.onEject = { [weak self] in self?.playlistManager?.openFileFolderList() }
 
         // Play state
         audioEngine.$isPlaying
@@ -694,27 +694,6 @@ class MainPlayerView: NSView {
         menu.popUp(positioning: nil, at: anchor, in: self)
     }
 
-    private func showOpenFilePanel() {
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = true
-        panel.canChooseDirectories = true
-        panel.allowsMultipleSelection = true
-        panel.allowedContentTypes = [.audio, .mp3, .mpeg4Audio, .wav, .aiff]
-        panel.begin { [weak self] response in
-            guard response == .OK else { return }
-            Task { @MainActor in
-                for url in panel.urls {
-                    var isDir: ObjCBool = false
-                    FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir)
-                    if isDir.boolValue {
-                        await self?.playlistManager?.addFolder(url)
-                    } else {
-                        await self?.playlistManager?.addURLs([url])
-                    }
-                }
-            }
-        }
-    }
 
     // MARK: - Radio Clock
 
