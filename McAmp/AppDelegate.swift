@@ -14,7 +14,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private weak var autoPlayMenuItem: NSMenuItem?
     private var jumpToFileWindow: JumpToFileWindow?
     private var jumpToFileMonitor: Any?
-
+    private var lastSkinDirectory: URL? {
+        get {
+            let path = UserDefaults.standard.string(forKey: "lastSkinDirectory")
+            return path.flatMap { URL(fileURLWithPath: $0) } ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Documents/McAmp Skins")
+        }
+        set {
+            UserDefaults.standard.set(newValue?.path, forKey: "lastSkinDirectory")
+        }
+    }
+    
     static func main() {
         let app = NSApplication.shared
         let delegate = AppDelegate()
@@ -524,20 +533,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = false
 
-        // get path to ~/Documents/McAmp Skins
-        let fileManager = FileManager.default
-        if let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first {
-            let skinsURL = documentsURL.appendingPathComponent("McAmp Skins")
-            
-            // does 'McAmp Skins' exist
-            var isDirectory: ObjCBool = false
-            if fileManager.fileExists(atPath: skinsURL.path, isDirectory: &isDirectory) && isDirectory.boolValue {
-                panel.directoryURL = skinsURL
-            }
-        }
-        
+        panel.directoryURL = lastSkinDirectory
         guard panel.runModal() == .OK, let url = panel.url else { return }
 
+        if let lastURL = panel.urls.last {
+            var isDir: ObjCBool = false
+            FileManager.default.fileExists(atPath: lastURL.path, isDirectory: &isDir)
+            lastSkinDirectory = isDir.boolValue ? lastURL : lastURL.deletingLastPathComponent()
+        }
+        
         Task { @MainActor [weak self] in
             do {
                 try await SkinManager.shared.loadSkin(from: url)

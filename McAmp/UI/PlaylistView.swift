@@ -635,19 +635,7 @@ class PlaylistView: NSView {
     }
 
     @objc func listOptsLoad() {
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = true
-        panel.canChooseDirectories = false
-        panel.allowsMultipleSelection = false
-        panel.allowedContentTypes = [UTType(filenameExtension: "m3u"),
-                                     UTType(filenameExtension: "m3u8"),
-                                     UTType(filenameExtension: "pls")].compactMap { $0 }
-        panel.begin { [weak self] response in
-            guard response == .OK, let url = panel.url else { return }
-            Task { @MainActor in
-                await self?.playlistManager?.addM3U(url: url, clear: true)
-            }
-        }
+        playlistManager?.openFileFolderList(.lists)
     }
 
     @objc func listOptsSave() {
@@ -660,18 +648,6 @@ class PlaylistView: NSView {
         }
     }
 
-//    @objc private func addFolder() {
-//        let panel = NSOpenPanel()
-//        panel.canChooseFiles = false
-//        panel.canChooseDirectories = true
-//        panel.allowsMultipleSelection = false
-//        panel.begin { [weak self] response in
-//            guard response == .OK, let url = panel.url else { return }
-//            Task { @MainActor in
-//                await self?.playlistManager?.addFolder(url)
-//            }
-//        }
-//    }
 
     // MARK: - Skinned bottom-button rects
     // Baked-button positions measured from PLEDIT.BMP bottom-left corner sprite

@@ -10,7 +10,16 @@ class PlaylistManager: ObservableObject {
 
     private var cancellables = Set<AnyCancellable>()
     private weak var audioEngine: AudioEngine?
-
+    private var lastFileFolderDirectory: URL? {
+        get {
+            let path = UserDefaults.standard.string(forKey: "lastFileFolderDirectory")
+            return path.flatMap { URL(fileURLWithPath: $0) } ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Music")
+        }
+        set {
+            UserDefaults.standard.set(newValue?.path, forKey: "lastFileFolderDirectory")
+        }
+    }
+    
     var autoPlay: Bool = false
     var autoPlayOnStartup: Bool = false
     
@@ -70,18 +79,45 @@ class PlaylistManager: ObservableObject {
     }
 
     // MARK: - Track Management
-    func openFileFolderList() {
+    enum FileFilter {
+        case all
+        case lists
+    }
+    
+    /// This is the only load function for all buttons and menu items
+    /// The List Button lets only load playlist, every other button oder menu item allowas files, folders and lists
+    func openFileFolderList(_ filter: FileFilter = .all) {
         let panel = NSOpenPanel()
         panel.canChooseFiles = true
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = true
-        panel.allowedContentTypes = [.folder,
-                                     .audio, .mp3, .mpeg4Audio, .wav, .aiff,
-                                     UTType(filenameExtension: "m3u"),
-                                     UTType(filenameExtension: "m3u8"),
-                                     UTType(filenameExtension: "pls")].compactMap { $0 }
+        
+        let baseTypes: [UTType] = [
+            .folder,
+            .audio, .mp3, .mpeg4Audio, .wav, .aiff
+        ].compactMap { $0 }
+
+        let listTypes: [UTType] = [
+            UTType(filenameExtension: "m3u"),
+            UTType(filenameExtension: "m3u8"),
+            UTType(filenameExtension: "pls")
+        ].compactMap { $0 }
+
+        panel.allowedContentTypes = switch filter {
+            case .all:   baseTypes + listTypes
+            case .lists: listTypes
+        }
+        
+        panel.directoryURL = lastFileFolderDirectory
         panel.begin { [weak self] response in
             guard response == .OK else { return }
+            
+            if let lastURL = panel.urls.last {
+                var isDir: ObjCBool = false
+                FileManager.default.fileExists(atPath: lastURL.path, isDirectory: &isDir)
+                self?.lastFileFolderDirectory = isDir.boolValue ? lastURL : lastURL.deletingLastPathComponent()
+            }
+            
             Task { @MainActor in
                 for url in panel.urls {
                     let ext = url.pathExtension.lowercased()
@@ -92,7 +128,8 @@ class PlaylistManager: ObservableObject {
                         debugLog("addFolder")
                     } else {
                         if ext == "m3u" || ext == "m3u8" || ext == "pls" {
-                            await self?.addM3U(url: url)
+                            let clear = filter == .lists // clear playlist if called vai list button in playlist window
+                            await self?.addM3U(url: url, clear: clear)
                             debugLog("addM3U")
                         } else {
                             await self?.addURLs([url])
