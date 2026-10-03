@@ -524,12 +524,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = false
 
-        // get path to ~/Documents/WinAmp Skins
+        // get path to ~/Documents/McAmp Skins
         let fileManager = FileManager.default
         if let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first {
-            let skinsURL = documentsURL.appendingPathComponent("WinAmp Skins")
+            let skinsURL = documentsURL.appendingPathComponent("McAmp Skins")
             
-            // does 'WinAmp Skins' exist
+            // does 'McAmp Skins' exist
             var isDirectory: ObjCBool = false
             if fileManager.fileExists(atPath: skinsURL.path, isDirectory: &isDirectory) && isDirectory.boolValue {
                 panel.directoryURL = skinsURL
