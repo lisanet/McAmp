@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import Wamp
+@testable import McAmp
 
 @Suite("ITunesLibraryXMLParser")
 struct ITunesLibraryXMLParserTests {
@@ -191,7 +191,7 @@ struct ITunesLibraryXMLParserTests {
 
     @Test func parseFromURLRoundTrip() throws {
         let tmp = FileManager.default.temporaryDirectory
-            .appendingPathComponent("wamp-lib-xml-test-\(UUID().uuidString).xml")
+            .appendingPathComponent("mcamp-lib-xml-test-\(UUID().uuidString).xml")
         defer { try? FileManager.default.removeItem(at: tmp) }
         let body = """
             <key>Tracks</key><dict>

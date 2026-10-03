@@ -1,4 +1,4 @@
-// Wamp/Skinning/SkinModel.swift
+// McAmp/Skinning/SkinModel.swift
 // Ported from packages/webamp/js/types.ts (subset).
 // Spec: docs/superpowers/specs/2026-04-10-skin-support-design.md §3
 

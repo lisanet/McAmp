@@ -222,9 +222,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         // App
-        let about = item("About Wamp", #selector(showAboutPanel), "", symbol: "info.circle")
-        let hide = item("Hide Wamp", #selector(NSApplication.hide(_:)), "h", symbol: "eye.slash")
-        let quit = item("Quit Wamp", #selector(NSApplication.terminate(_:)), "q", symbol: "power")
+        let about = item("About McAmp", #selector(showAboutPanel), "", symbol: "info.circle")
+        let hide = item("Hide McAmp", #selector(NSApplication.hide(_:)), "h", symbol: "eye.slash")
+        let quit = item("Quit McAmp", #selector(NSApplication.terminate(_:)), "q", symbol: "power")
 
         // File
         let openFile = item("Open…", #selector(openFileAction), "o", symbol: "doc")
@@ -340,7 +340,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // always shown as the app name), so the submenus must be titled —
         // an untitled NSMenu() renders as "NSMenuItem".
         let groups: [(String, [NSMenuItem])] = [
-            ("Wamp", items.app + items.quit), ("File", items.file), ("Edit", items.edit),
+            ("McAmp", items.app + items.quit), ("File", items.file), ("Edit", items.edit),
             ("Controls", items.controls), ("View", items.view)
         ]
         for (title, group) in groups {
@@ -370,11 +370,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             .link: URL(string: "https://github.com/wishval/wamp") as Any,
             .foregroundColor: NSColor.linkColor
         ]
-        credits.append(NSAttributedString(string: "GitHub: https://github.com/lisanet/wamp",
+        credits.append(NSAttributedString(string: "GitHub: https://github.com/lisanet/McAmp",
                                           attributes: linkAttrs))
 
         NSApp.orderFrontStandardAboutPanel(options: [
-            .applicationName: "Wamp",
+            .applicationName: "McAmp",
             .applicationVersion: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "",
             .version: Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "",
             .credits: credits,

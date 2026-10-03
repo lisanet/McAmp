@@ -1,4 +1,4 @@
-// Wamp/Skinning/SkinParser.swift
+// McAmp/Skinning/SkinParser.swift
 // Orchestrator. See spec §5.
 
 import AppKit

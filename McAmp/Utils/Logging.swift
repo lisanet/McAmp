@@ -1,6 +1,6 @@
 //
 //  Logging.swift
-//  Wamp
+//  McAmp
 //
 //  Created by Simone Karin Lehmann on 28.09.26.
 //

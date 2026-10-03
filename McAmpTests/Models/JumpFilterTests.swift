@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import Wamp
+@testable import McAmp
 
 @Suite("JumpFilter")
 struct JumpFilterTests {

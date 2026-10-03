@@ -183,7 +183,7 @@ class PlaylistManager: ObservableObject {
         let skippedMissing: Int
     }
 
-    /// Convert a set of tracks from a Music.app library snapshot into Wamp
+    /// Convert a set of tracks from a Music.app library snapshot into McAmp
     /// tracks and append (or replace) the playlist. Streaming-only items (no
     /// local file) and items whose file has been removed are counted for the
     /// summary alert but not added. Skips the usual `Track.fromURL` asset

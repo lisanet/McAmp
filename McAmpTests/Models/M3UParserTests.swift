@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import Wamp
+@testable import McAmp
 
 @Suite("M3UParser")
 struct M3UParserTests {
@@ -211,7 +211,7 @@ struct M3UParserTests {
 
     @Test func parseFromURLResolvesBaseAutomatically() throws {
         let tmp = FileManager.default.temporaryDirectory
-            .appendingPathComponent("wamp-m3u-test-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("mcamp-m3u-test-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: tmp) }
 

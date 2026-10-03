@@ -1,7 +1,7 @@
 import AppKit
 
 /// Sheet that shows the Music.app library and lets the user pick sources
-/// (all songs + individual playlists) to import into Wamp. State machine:
+/// (all songs + individual playlists) to import into McAmp. State machine:
 /// loading → loaded | error. On import, the caller-supplied `onImport`
 /// closure receives the concatenated ITunesTrack list so routing into
 /// `PlaylistManager.importMusicLibraryTracks` stays in `AppDelegate`.

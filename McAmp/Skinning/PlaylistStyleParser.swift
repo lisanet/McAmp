@@ -1,4 +1,4 @@
-// Wamp/Skinning/PlaylistStyleParser.swift
+// McAmp/Skinning/PlaylistStyleParser.swift
 // Parses pledit.txt [Text] section. See spec §3.
 
 import AppKit

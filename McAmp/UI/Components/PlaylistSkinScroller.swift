@@ -1,4 +1,4 @@
-// Wamp/UI/Components/PlaylistSkinScroller.swift
+// McAmp/UI/Components/PlaylistSkinScroller.swift
 // Custom scroll thumb that draws .playlistScrollHandle from pledit.bmp.
 // Replaces the native NSScroller when a Winamp skin is active.
 

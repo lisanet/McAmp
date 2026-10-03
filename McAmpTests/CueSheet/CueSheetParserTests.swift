@@ -1,14 +1,14 @@
 import Testing
 import Foundation
-@testable import Wamp
+@testable import McAmp
 
 @Suite("CueSheetParser")
 struct CueSheetParserTests {
 
     private func fixtureURL(_ name: String, file: StaticString = #filePath) -> URL {
         URL(fileURLWithPath: "\(file)")
-            .deletingLastPathComponent()   // WampTests/CueSheet
-            .deletingLastPathComponent()   // WampTests
+            .deletingLastPathComponent()   // McAmpTests/CueSheet
+            .deletingLastPathComponent()   // McAmpTests
             .appendingPathComponent("Fixtures/cue/\(name).cue")
     }
 

@@ -1,7 +1,7 @@
 import Testing
 import Foundation
 import AVFoundation
-@testable import Wamp
+@testable import McAmp
 
 @MainActor
 @Suite("PlaylistManager")

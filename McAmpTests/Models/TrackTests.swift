@@ -1,24 +1,24 @@
 import Testing
 import Foundation
-@testable import Wamp
+@testable import McAmp
 
 @MainActor
 @Suite("Track")
 struct TrackTests {
 
     private func fixtureURL(file: StaticString = #filePath) -> URL {
-        // #filePath → .../WampTests/Models/TrackTests.swift
+        // #filePath → .../McAmpTests/Models/TrackTests.swift
         URL(fileURLWithPath: "\(file)")
-            .deletingLastPathComponent()   // WampTests/Models
-            .deletingLastPathComponent()   // WampTests
+            .deletingLastPathComponent()   // McAmpTests/Models
+            .deletingLastPathComponent()   // McAmpTests
             .appendingPathComponent("Fixtures/sample.m4a")
     }
 
     @Test func fromURL_parsesMetadataTags() async {
         let track = await Track.fromURL(fixtureURL())
-        #expect(track.title == "Wamp Fixture Title")
-        #expect(track.artist == "Wamp Fixture Artist")
-        #expect(track.album == "Wamp Fixture Album")
+        #expect(track.title == "McAmp Fixture Title")
+        #expect(track.artist == "McAmp Fixture Artist")
+        #expect(track.album == "McAmp Fixture Album")
         #expect(track.genre == "Electronic")
     }
 

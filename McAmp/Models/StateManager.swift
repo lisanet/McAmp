@@ -31,7 +31,7 @@ class StateManager {
 
     static var defaultDirectory: URL {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        return appSupport.appendingPathComponent("Wamp")
+        return appSupport.appendingPathComponent("McAmp")
     }
 
     init(directory: URL = StateManager.defaultDirectory) {

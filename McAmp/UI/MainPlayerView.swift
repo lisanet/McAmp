@@ -70,7 +70,7 @@ class MainPlayerView: NSView {
     /// View height in logical (pre-scale) points. Winamp's main.bmp is exactly
     /// 116 px tall, so when a skin is active we shrink the view to match and
     /// lay out subviews at the sprite's native pixel coordinates. When no skin
-    /// is loaded, we use Wamp's original 126 px layout.
+    /// is loaded, we use McAmp's original 126 px layout.
     var desiredHeight: CGFloat {
         WinampTheme.skinIsActive ? 116 : WinampTheme.mainPlayerHeight
     }
@@ -94,7 +94,7 @@ class MainPlayerView: NSView {
 
     private func setupSubviews() {
         // Title bar
-        titleBar.titleText = "WAMP"
+        titleBar.titleText = "McAmp"
         titleBar.showButtons = true
         titleBar.onClose = { NSApp.terminate(nil) }
         titleBar.onMinimize = { [weak self] in self?.window?.miniaturize(nil) }
@@ -265,7 +265,7 @@ class MainPlayerView: NSView {
     @objc private func handleSkinnedMinimize() { window?.miniaturize(nil) }
     @objc private func handleSkinnedMenu() { showWindowMenu() }
     @objc private func handleOpenGitHub() {
-        if let url = URL(string: "https://github.com/lisanet/wamp") {
+        if let url = URL(string: "https://github.com/lisanet/mcamp") {
             NSWorkspace.shared.open(url)
         }
     }

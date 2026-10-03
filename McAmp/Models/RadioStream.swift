@@ -1,6 +1,6 @@
 //
 //  RadioStream.swift
-//  Wamp
+//  McAmp
 //
 //  Created by Simone Karin Lehmann on 24.09.26.
 //
@@ -40,7 +40,7 @@ final class RadioStream: NSObject {
 
         var request = URLRequest(url: url)
         request.setValue("1", forHTTPHeaderField: "Icy-MetaData")
-        request.setValue("Wamp/1.0", forHTTPHeaderField: "User-Agent")
+        request.setValue("McAmp/1.0", forHTTPHeaderField: "User-Agent")
 
         task = session?.dataTask(with: request)
         task?.resume()

@@ -1,6 +1,6 @@
 //
 //  RadioAudioParserDelegate.swift
-//  Wamp
+//  McAmp
 //
 //  Created by Simone Karin Lehmann on 24.09.26.
 //

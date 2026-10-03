@@ -1,4 +1,4 @@
-// Wamp/Skinning/WinampClassicSkin.swift
+// McAmp/Skinning/WinampClassicSkin.swift
 // SkinProvider impl backed by a parsed SkinModel. See spec §6.
 
 import AppKit

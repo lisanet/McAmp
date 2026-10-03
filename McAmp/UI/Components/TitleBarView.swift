@@ -2,7 +2,7 @@ import Cocoa
 import Combine
 
 class TitleBarView: NSView {
-    var titleText: String = "WAMP" { didSet { needsDisplay = true } }
+    var titleText: String = "McAmp" { didSet { needsDisplay = true } }
     var showButtons: Bool = true
     var onClose: (() -> Void)?
     var onMinimize: (() -> Void)?

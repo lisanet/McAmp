@@ -57,7 +57,7 @@ class EqualizerView: NSView {
 
     /// View height in logical points. eqmain.bmp is 116 px tall, so when a skin
     /// is active we shrink the view to match and draw the sprite 1:1. Without a
-    /// skin we use Wamp's original 112 px layout.
+    /// skin we use McAmp's original 112 px layout.
     var desiredHeight: CGFloat {
         WinampTheme.skinIsActive ? 116 : WinampTheme.equalizerHeight
     }
@@ -80,7 +80,7 @@ class EqualizerView: NSView {
     required init?(coder: NSCoder) { fatalError() }
 
     private func setupSubviews() {
-        titleBar.titleText = "WAMP EQUALIZER"
+        titleBar.titleText = "McAmp EQUALIZER"
         titleBar.showButtons = false
         addSubview(titleBar)
 

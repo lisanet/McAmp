@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import Wamp
+@testable import McAmp
 
 @MainActor
 @Suite("Persistence round-trip")
@@ -8,7 +8,7 @@ struct PersistenceRoundTripTests {
 
     @Test func fullSessionRestoresAfterReload() {
         let dir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("WampRoundTrip-\(UUID().uuidString)")
+            .appendingPathComponent("McAmpRoundTrip-\(UUID().uuidString)")
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: dir) }
 

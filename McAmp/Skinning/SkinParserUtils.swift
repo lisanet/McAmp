@@ -1,4 +1,4 @@
-// Wamp/Skinning/SkinParserUtils.swift
+// McAmp/Skinning/SkinParserUtils.swift
 // ZIP extraction, image loading, nums_ex unification. See spec §4.1, §4.3.
 
 import AppKit

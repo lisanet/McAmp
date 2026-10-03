@@ -1,4 +1,4 @@
-// Wamp/Skinning/TextSpriteRenderer.swift
+// McAmp/Skinning/TextSpriteRenderer.swift
 // Glyph map ported verbatim from FONT_LOOKUP in
 // packages/webamp/js/skinSprites.ts @ webamp/master.
 // See spec §4 (text rendering subsection).

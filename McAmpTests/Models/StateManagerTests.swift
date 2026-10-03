@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import Wamp
+@testable import McAmp
 
 @MainActor
 @Suite("StateManager")
@@ -8,7 +8,7 @@ struct StateManagerTests {
 
     private func makeTempDirectory() -> URL {
         let dir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("WampTests-\(UUID().uuidString)")
+            .appendingPathComponent("McAmpTests-\(UUID().uuidString)")
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir
     }

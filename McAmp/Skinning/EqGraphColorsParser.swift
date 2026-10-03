@@ -1,4 +1,4 @@
-// Wamp/Skinning/EqGraphColorsParser.swift
+// McAmp/Skinning/EqGraphColorsParser.swift
 // Samples 19 line colors and 1 preamp color from eqmain.bmp. See spec §4.4.
 
 import AppKit

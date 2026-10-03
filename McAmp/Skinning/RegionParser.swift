@@ -1,4 +1,4 @@
-// Wamp/Skinning/RegionParser.swift
+// McAmp/Skinning/RegionParser.swift
 // Parses region.txt [Normal] section into a Y-flipped CGPoint polygon. See spec §3.
 
 import CoreGraphics

@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import Wamp
+@testable import McAmp
 
 @Suite("FlacCueExtractor")
 struct FlacCueExtractorTests {
@@ -18,7 +18,7 @@ struct FlacCueExtractorTests {
         d.append(Data(repeating: 0, count: 34))
 
         // VORBIS_COMMENT block, last metadata block.
-        let vendor = "Wamp test".data(using: .utf8)!
+        let vendor = "McAmp test".data(using: .utf8)!
         var body = Data()
         body.append(uint32LE(UInt32(vendor.count)))
         body.append(vendor)

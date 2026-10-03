@@ -2,27 +2,27 @@
 //
 // generate-sample.swift
 //
-// One-off generator for WampTests/Fixtures/sample.m4a. This script is NOT
-// compiled into the WampTests target; it lives in the repo as documentation
+// One-off generator for McAmpTests/Fixtures/sample.m4a. This script is NOT
+// compiled into the McAmpTests target; it lives in the repo as documentation
 // of how the fixture was produced. Re-run only if you need to regenerate the
 // fixture.
 //
 // Usage:
-//   swift WampTests/Fixtures/generate-sample.swift
+//   swift McAmpTests/Fixtures/generate-sample.swift
 //
-// Output: WampTests/Fixtures/sample.m4a — ~0.5s stereo 44.1kHz AAC silence
+// Output: McAmpTests/Fixtures/sample.m4a — ~0.5s stereo 44.1kHz AAC silence
 // tagged with title/artist/album/genre. Tags are written via the iTunes
 // metadata keyspace because AVAssetWriter ignores `.common` keyspace for
 // m4a; AVFoundation exposes iTunes keys as `commonKey` automatically when
-// reading, which is exactly how Wamp's Track.fromURL consumes them.
+// reading, which is exactly how McAmp's Track.fromURL consumes them.
 //
 
 import Foundation
 import AVFoundation
 
-let fixtureTitle = "Wamp Fixture Title"
-let fixtureArtist = "Wamp Fixture Artist"
-let fixtureAlbum = "Wamp Fixture Album"
+let fixtureTitle = "McAmp Fixture Title"
+let fixtureArtist = "McAmp Fixture Artist"
+let fixtureAlbum = "McAmp Fixture Album"
 let fixtureGenre = "Electronic"
 
 let scriptURL = URL(fileURLWithPath: #filePath)

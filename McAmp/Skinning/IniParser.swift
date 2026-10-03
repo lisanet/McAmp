@@ -1,4 +1,4 @@
-// Wamp/Skinning/IniParser.swift
+// McAmp/Skinning/IniParser.swift
 // Generic INI parser used by playlist style and region. See spec §3.
 
 import Foundation

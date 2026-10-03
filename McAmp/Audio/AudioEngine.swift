@@ -204,7 +204,7 @@ class AudioEngine: ObservableObject {
     private var radioStream: RadioStream?
     private var radioParser: RadioAudioParser?
     private var radioDecoder: RadioDecoder?
-    private let radioQueue = DispatchQueue(label: "Wamp.RadioAudio")
+    private let radioQueue = DispatchQueue(label: "McAmp.RadioAudio")
     private var radioScheduledBuffers = 0
     private var radioPlaybackStarted = false
     private var radioMagicCookie: Data?

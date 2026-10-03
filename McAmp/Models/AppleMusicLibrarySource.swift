@@ -13,14 +13,14 @@ enum AppleMusicLibraryError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .cannotRead(let err):
-            return "Wamp couldn't read your Music library: \(err.localizedDescription)"
+            return "McAmp couldn't read your Music library: \(err.localizedDescription)"
         }
     }
 
     var recoverySuggestion: String? {
         switch self {
         case .cannotRead:
-            return "If you denied permission earlier, open System Settings → Privacy & Security → Media & Apple Music and enable Wamp."
+            return "If you denied permission earlier, open System Settings → Privacy & Security → Media & Apple Music and enable McAmp."
         }
     }
 

@@ -1,6 +1,6 @@
-// Wamp/Skinning/SpriteCatalog.swift
+// McAmp/Skinning/SpriteCatalog.swift
 // Sprite coordinates ported from packages/webamp/js/skinSprites.ts @ webamp/master.
-// Only the subset used by Wamp's UI. See spec §4.2 for the complete enum.
+// Only the subset used by McAmp's UI. See spec §4.2 for the complete enum.
 
 import CoreGraphics
 import Foundation

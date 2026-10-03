@@ -1,4 +1,4 @@
-// Wamp/Skinning/ViscolorsParser.swift
+// McAmp/Skinning/ViscolorsParser.swift
 // Parses viscolor.txt into 24 NSColors. See spec §3.
 
 import AppKit

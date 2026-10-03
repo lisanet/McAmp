@@ -1,4 +1,4 @@
-// Wamp/Skinning/SkinManager.swift
+// McAmp/Skinning/SkinManager.swift
 // Atomic skin lifecycle. See spec §2.3 and §12 (Known pitfalls).
 
 import AppKit

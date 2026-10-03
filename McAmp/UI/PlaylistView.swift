@@ -46,7 +46,7 @@ class PlaylistView: NSView {
     required init?(coder: NSCoder) { fatalError() }
 
     private func setupSubviews() {
-        titleBar.titleText = "WAMP PLAYLIST"
+        titleBar.titleText = "McAmp PLAYLIST"
         titleBar.showButtons = false
         addSubview(titleBar)
 
@@ -147,7 +147,7 @@ class PlaylistView: NSView {
 
     /// Hides controls baked into pledit.bmp and controls that don't exist in
     /// classic Winamp (the search field). The ADD/REM buttons are hidden because
-    /// pledit's bottom-left corner sprite already paints them — showing the Wamp
+    /// pledit's bottom-left corner sprite already paints them — showing the McAmp
     /// NSButtons on top would double-render. Classic Winamp had no persistent
     /// search bar (it used Ctrl+J Jump-To-File), so searchField hides too.
     private func applySkinVisibility() {
@@ -925,7 +925,7 @@ class PlaylistTableView: NSTableView {
 }
 
 // Custom row view: uses skin's pledit colors when a skin is loaded,
-// falls back to Wamp's built-in black bg + blue selection otherwise.
+// falls back to McAmp's built-in black bg + blue selection otherwise.
 class WinampRowView: NSTableRowView {
     override func drawSelection(in dirtyRect: NSRect) {
         guard isSelected else { return }

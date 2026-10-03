@@ -1,4 +1,4 @@
-// Wamp/Skinning/SkinProvider.swift
+// McAmp/Skinning/SkinProvider.swift
 // Provider protocol + BuiltInSkin (no skin loaded). See spec §6.
 
 import AppKit

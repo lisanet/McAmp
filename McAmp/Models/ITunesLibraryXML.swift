@@ -1,7 +1,7 @@
 import Foundation
 
 /// Representation of a user's `iTunes Music Library.xml` export from macOS Music.app.
-/// Only the fields Wamp needs for local import are parsed.
+/// Only the fields McAmp needs for local import are parsed.
 struct ITunesLibrary: Equatable {
     let tracks: [Int: ITunesTrack]
     let playlists: [ITunesPlaylist]
