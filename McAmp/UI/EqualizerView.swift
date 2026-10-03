@@ -186,7 +186,7 @@ class EqualizerView: NSView {
         dbUnitLabel?.isHidden = active
     }
 
-    private func makeEqComposite() -> NSImage? {
+    private func compositeEqBackground() -> NSImage? {
         if let cached = WinampTheme.eqCompositeImage { return cached }
         guard let bg = WinampTheme.sprite(.eqBackground),
               let gb = WinampTheme.sprite(.eqGraphBackground) else { return nil }
@@ -213,7 +213,7 @@ class EqualizerView: NSView {
         ctx?.imageInterpolation = .none
         defer { if let prev = prev { ctx?.imageInterpolation = prev } }
 
-        if let composite = makeEqComposite() {
+        if let composite = compositeEqBackground() {
             composite.draw(in: bounds)
         }
         
