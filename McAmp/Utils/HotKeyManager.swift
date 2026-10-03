@@ -16,7 +16,7 @@ class HotKeyManager {
         let center = MPRemoteCommandCenter.shared()
 
         center.playCommand.addTarget { [weak self] _ in
-            self?.audioEngine?.play()
+            self?.playlistManager?.playTrack(at: self?.playlistManager?.currentIndex ?? -1)
             return .success
         }
 
@@ -26,7 +26,11 @@ class HotKeyManager {
         }
 
         center.togglePlayPauseCommand.addTarget { [weak self] _ in
-            self?.audioEngine?.togglePlayPause()
+            if (self?.audioEngine?.isPlaying) == true {
+                self?.audioEngine?.pause()
+            } else {
+                self?.playlistManager?.playTrack(at: self?.playlistManager?.currentIndex ?? -1)
+            }
             return .success
         }
 
