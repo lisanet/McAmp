@@ -125,8 +125,10 @@ final class WinampTheme {
     
     // MARK: - Composite Images, prerenderd, avoids scaling artifacts
     static var eqCompositeImage: NSImage?
+    static var plvCompositeImage: NSImage?
     
     static func invalidateCache() {
         eqCompositeImage = nil
+        plvCompositeImage = nil
     }
 }
