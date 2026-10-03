@@ -186,10 +186,26 @@ class EqualizerView: NSView {
         dbUnitLabel?.isHidden = active
     }
 
+    private func makeEqComposite() -> NSImage? {
+        if let cached = WinampTheme.eqCompositeImage { return cached }
+        guard let bg = WinampTheme.sprite(.eqBackground),
+              let gb = WinampTheme.sprite(.eqGraphBackground) else { return nil }
+        
+        let result = NSImage(size: bg.size)
+        result.lockFocus()
+        bg.draw(at: .zero, from: .zero, operation: .sourceOver, fraction: 1)
+        gb.draw(at: NSPoint(x: 86, y: 80), from: .zero, operation: .sourceOver, fraction: 1)
+        result.unlockFocus()
+        
+        WinampTheme.eqCompositeImage = result
+        return result
+    }
+    
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
         if !WinampTheme.skinIsActive {
             drawUnskinnedDecorations()
+            WinampTheme.invalidateCache()
         }
         guard WinampTheme.skinIsActive else { return }
         let ctx = NSGraphicsContext.current
@@ -197,12 +213,10 @@ class EqualizerView: NSView {
         ctx?.imageInterpolation = .none
         defer { if let prev = prev { ctx?.imageInterpolation = prev } }
 
-        if let bg = WinampTheme.sprite(.eqBackground) {
-            // eqmain.bmp is 275×116; view is resized to 116 when skinned so the
-            // sprite fills bounds exactly and sub-sprite coords match Webamp.
-            bg.draw(in: bounds)
+        if let composite = makeEqComposite() {
+            composite.draw(in: bounds)
         }
-
+        
         // Title bar overlay (y=0..14 of the EQ body is left empty for this).
         let isActive = window?.isKeyWindow ?? true
         if let tb = WinampTheme.sprite(.eqTitleBar(active: isActive)) {

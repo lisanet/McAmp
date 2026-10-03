@@ -122,4 +122,11 @@ final class WinampTheme {
     static let playlistMinHeight: CGFloat = 232
     static let titleBarHeight: CGFloat = 16
     static let transportButtonSize = NSSize(width: 22, height: 18)
+    
+    // MARK: - Composite Images, prerenderd, avoids scaling artifacts
+    static var eqCompositeImage: NSImage?
+    
+    static func invalidateCache() {
+        eqCompositeImage = nil
+    }
 }

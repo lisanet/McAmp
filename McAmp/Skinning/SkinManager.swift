@@ -40,6 +40,7 @@ final class SkinManager: ObservableObject {
     /// (feature/skin-support) had this in the wrong order and caused render races.
     private func transition(to newSkin: SkinProvider) {
         WinampTheme.provider = newSkin
+        WinampTheme.invalidateCache()
         self.currentSkin = newSkin   // fires @Published — observers run AFTER provider is set
     }
 }

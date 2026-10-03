@@ -30,10 +30,6 @@ class EQResponseView: NSView {
 
         let b = bounds
 
-        if let bg = WinampTheme.sprite(.eqGraphBackground) {
-            bg.draw(in: b)
-        }
-
         // Skin-sourced palette: 19 colors from the vertical strip at x=115,
         // y=294..312 in eqmain.bmp (index 0 = +12 dB / top, 18 = −12 dB / bottom).
         // See EqGraphColorsParser.
