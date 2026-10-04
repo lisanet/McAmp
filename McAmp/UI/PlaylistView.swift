@@ -183,13 +183,7 @@ class PlaylistView: NSView {
         }
         
         if let cached = WinampTheme.plvCompositeImage { return cached }
-        
-        let isActive = window?.isKeyWindow ?? true
-        let w = WinampTheme.windowWidth
-        let h = WinampTheme.playlistMinHeight
-        let result = NSImage(size: NSSize(width: w, height: h))
-        result.lockFocus()
-        
+
         guard
             let tl = WinampTheme.sprite(.playlistTopLeftCorner(active: isActive)),
             let tr = WinampTheme.sprite(.playlistTopRightCorner(active: isActive)),
@@ -199,6 +193,12 @@ class PlaylistView: NSView {
             let rt = WinampTheme.sprite(.playlistRightTile),
             let bl = WinampTheme.sprite(.playlistBottomLeftCorner),
             let br = WinampTheme.sprite(.playlistBottomRightCorner) else { return nil }
+        
+        let isActive = window?.isKeyWindow ?? true
+        let w = WinampTheme.windowWidth
+        let h = WinampTheme.playlistMinHeight
+        let result = NSImage(size: NSSize(width: w, height: h))
+        result.lockFocus()
         
         // top row
         tileDraw(tl, x: 0, y: h - 20)
