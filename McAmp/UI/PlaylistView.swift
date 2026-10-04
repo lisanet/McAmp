@@ -8,13 +8,13 @@ class PlaylistView: NSView {
     private let titleBar = TitleBarView()
     private let scrollView = AlwaysVisibleScrollView()
     private let tableView = PlaylistTableView()
-    private let searchField = NSTextField()
-    private let addButton = WinampButton(title: "ADD", style: .action)
-    private let remButton = WinampButton(title: "REM", style: .action)
-    private let selButton = WinampButton(title: "SEL", style: .action)
-    private let miscButton = WinampButton(title: "MISC", style: .action)
-    private let listOptsButton = WinampButton(title: "LISTS", style: .action)
-    private let infoLabel = NSTextField(labelWithString: "")
+//    private let searchField = NSTextField()
+//    private let addButton = WinampButton(title: "ADD", style: .action)
+//    private let remButton = WinampButton(title: "REM", style: .action)
+//    private let selButton = WinampButton(title: "SEL", style: .action)
+//    private let miscButton = WinampButton(title: "MISC", style: .action)
+//    private let listOptsButton = WinampButton(title: "LISTS", style: .action)
+//    private let infoLabel = NSTextField(labelWithString: "")
     private let skinScroller = PlaylistSkinScroller()
 
     private var cancellables = Set<AnyCancellable>()
@@ -55,8 +55,8 @@ class PlaylistView: NSView {
         column.width = WinampTheme.windowWidth - 20
         tableView.addTableColumn(column)
         tableView.headerView = nil
-        tableView.backgroundColor = .black
-        tableView.rowHeight = 18
+        tableView.backgroundColor = WinampTheme.provider.playlistStyle.normalBG
+        tableView.rowHeight = 13 // skinned
         tableView.intercellSpacing = NSSize(width: 0, height: 0)
         // macOS 11+ defaults NSTableView.style to .automatic, which applies
         // built-in row insets (rounded selection, side padding) that push the
@@ -76,9 +76,9 @@ class PlaylistView: NSView {
         tableView.menuProvider = { [weak self] row in self?.contextMenu(for: row) }
 
         scrollView.documentView = tableView
-        scrollView.hasVerticalScroller = true
+        scrollView.hasVerticalScroller = false
         scrollView.hasHorizontalScroller = false
-        scrollView.backgroundColor = .black
+        scrollView.backgroundColor = WinampTheme.provider.playlistStyle.normalBG
         scrollView.borderType = .noBorder
         scrollView.drawsBackground = true
         scrollView.automaticallyAdjustsContentInsets = false
@@ -89,60 +89,63 @@ class PlaylistView: NSView {
 
         // Skinned scroll handle (lives in the right-tile area; hidden when unskinned).
         skinScroller.attach(to: scrollView)
-        skinScroller.isHidden = true
+//        skinScroller.isHidden = true
         addSubview(skinScroller)
 
-        // Search field
-        searchField.placeholderString = "Search playlist..."
-        searchField.font = WinampTheme.bitrateFont
-        searchField.textColor = WinampTheme.greenBright
-        searchField.backgroundColor = NSColor(hex: 0x0A0E0A)
-        searchField.isBordered = true
-        searchField.isBezeled = true
-        searchField.bezelStyle = .squareBezel
-        searchField.focusRingType = .none
-        searchField.delegate = self
-        addSubview(searchField)
+//        // Search field
+//        searchField.placeholderString = "Search playlist..."
+//        searchField.font = WinampTheme.bitrateFont
+//        searchField.textColor = WinampTheme.greenBright
+//        searchField.backgroundColor = NSColor(hex: 0x0A0E0A)
+//        searchField.isBordered = true
+//        searchField.isBezeled = true
+//        searchField.bezelStyle = .squareBezel
+//        searchField.focusRingType = .none
+//        searchField.delegate = self
+//        addSubview(searchField)
 
         // Buttons
-        addButton.onClick  = { [weak self] in self?.showAddMenu() }
-        remButton.onClick  = { [weak self] in self?.showRemMenu() }
-        selButton.onClick  = { [weak self] in self?.showSelMenu() }
-        miscButton.onClick = { [weak self] in self?.showMiscMenu() }
+//        addButton.onClick  = { [weak self] in self?.showAddMenu() }
+//        remButton.onClick  = { [weak self] in self?.showRemMenu() }
+//        selButton.onClick  = { [weak self] in self?.showSelMenu() }
+//        miscButton.onClick = { [weak self] in self?.showMiscMenu() }
 
         // Sprite providers (pledit.bmp submenu sub-buttons). Unskinned mode
         // ignores these; they exist so the same NSButtons can be reused if
         // we ever expose them under a skin (currently we hide them).
-        addButton.spriteKeyProvider    = { _, pressed in .playlistAddFile(pressed: pressed) }
-        remButton.spriteKeyProvider    = { _, pressed in .playlistRemoveSelected(pressed: pressed) }
-        listOptsButton.spriteKeyProvider = { _, pressed in .playlistMiscOpts(pressed: pressed) }
+//        addButton.spriteKeyProvider    = { _, pressed in .playlistAddFile(pressed: pressed) }
+//        remButton.spriteKeyProvider    = { _, pressed in .playlistRemoveSelected(pressed: pressed) }
+//        listOptsButton.spriteKeyProvider = { _, pressed in .playlistMiscOpts(pressed: pressed) }
+//
+//        addSubview(addButton)
+//        addSubview(remButton)
+//        addSubview(selButton)
+//        addSubview(miscButton)
+//
+//        listOptsButton.onClick = { [weak self] in self?.showListOptsMenu() }
+//        addSubview(listOptsButton)
 
-        addSubview(addButton)
-        addSubview(remButton)
-        addSubview(selButton)
-        addSubview(miscButton)
-
-        listOptsButton.onClick = { [weak self] in self?.showListOptsMenu() }
-        addSubview(listOptsButton)
-
-        // Info label
-        infoLabel.font = WinampTheme.bitrateFont
-        infoLabel.textColor = WinampTheme.greenBright
-        infoLabel.backgroundColor = .black
-        infoLabel.drawsBackground = true
-        infoLabel.isBezeled = false
-        infoLabel.isEditable = false
-        infoLabel.alignment = .center
-        addSubview(infoLabel)
+//        // Info label
+//        infoLabel.font = WinampTheme.bitrateFont
+//        infoLabel.textColor = WinampTheme.greenBright
+//        infoLabel.backgroundColor = .black
+//        infoLabel.drawsBackground = true
+//        infoLabel.isBezeled = false
+//        infoLabel.isEditable = false
+//        infoLabel.alignment = .center
+//        addSubview(infoLabel)
 
         skinObserver = SkinManager.shared.$currentSkin
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.applySkinVisibility()
-                self?.tableView.reloadData()
+                //self?.tableView.reloadData()
                 self?.needsDisplay = true
             }
-        applySkinVisibility()
+        
+        // applySkinVisibility()
+        //tableView.reloadData()
+        needsLayout = true
     }
 
     /// Hides controls baked into pledit.bmp and controls that don't exist in
@@ -151,24 +154,25 @@ class PlaylistView: NSView {
     /// NSButtons on top would double-render. Classic Winamp had no persistent
     /// search bar (it used Ctrl+J Jump-To-File), so searchField hides too.
     private func applySkinVisibility() {
-        let active = WinampTheme.skinIsActive
-        titleBar.isHidden = active
-        infoLabel.isHidden = active
-        searchField.isHidden = active
-        addButton.isHidden = active
-        remButton.isHidden = active
-        selButton.isHidden = active
-        miscButton.isHidden = active
-        listOptsButton.isHidden = active
-        // Classic Winamp playlist rows are tight — text.bmp glyphs are 6 px tall.
-        tableView.rowHeight = active ? 13 : 18
-        tableView.backgroundColor = active ? WinampTheme.provider.playlistStyle.normalBG : .black
+//        let active = WinampTheme.skinIsActive
+//        titleBar.isHidden = active
+//        infoLabel.isHidden = active
+//        searchField.isHidden = active
+//        addButton.isHidden = active
+//        remButton.isHidden = active
+//        selButton.isHidden = active
+//        miscButton.isHidden = active
+//        listOptsButton.isHidden = active
+//        // Classic Winamp playlist rows are tight — text.bmp glyphs are 6 px tall.
+//        tableView.rowHeight = active ? 13 : 18
+//        tableView.backgroundColor = active ? WinampTheme.provider.playlistStyle.normalBG : .black
+        tableView.backgroundColor = WinampTheme.provider.playlistStyle.normalBG
         scrollView.backgroundColor = tableView.backgroundColor
         // Skinned playlists draw their own scroll thumb in the right-tile area.
-        scrollView.hasVerticalScroller = !active
-        skinScroller.isHidden = !active
+        // scrollView.hasVerticalScroller = !active
+        // skinScroller.isHidden = !active
         tableView.reloadData()
-        needsLayout = true
+        //needsLayout = true
     }
 
     override func draw(_ dirtyRect: NSRect) {
@@ -267,11 +271,7 @@ class PlaylistView: NSView {
 
     override func layout() {
         super.layout()
-        if WinampTheme.skinIsActive {
-            layoutSkinned()
-            return
-        }
-        layoutUnskinned()
+        layoutSkinned()
     }
 
     /// Classic-Winamp pledit frame layout: 20px title bar at top, 38px bottom
@@ -285,7 +285,15 @@ class PlaylistView: NSView {
         let leftW: CGFloat = 12
         let rightW: CGFloat = 20
 
+        // maybe we need it later
+        titleBar.isHidden = true
         titleBar.frame = NSRect(x: 0, y: h - topH, width: w, height: topH)
+ 
+        //        // Scroll view
+        //        let scrollTop = bounds.height - WinampTheme.titleBarHeight
+        //        let scrollH = scrollTop - bottomBarH - searchH - 2
+        //        scrollView.frame = NSRect(x: pad, y: bottomBarH + searchH + 1, width: w - 2 * pad, height: scrollH)
+
         scrollView.frame = NSRect(
             x: leftW,
             y: bottomH,
@@ -293,14 +301,14 @@ class PlaylistView: NSView {
             height: h - topH - bottomH
         )
 
-        // Hidden in skinned mode — collapse frames so they don't intercept hits.
-        searchField.frame = .zero
-        addButton.frame = .zero
-        remButton.frame = .zero
-        selButton.frame = .zero
-        miscButton.frame = .zero
-        listOptsButton.frame = .zero
-        infoLabel.frame = .zero
+//        // Hidden in skinned mode — collapse frames so they don't intercept hits.
+//        searchField.frame = .zero
+//        addButton.frame = .zero
+//        remButton.frame = .zero
+//        selButton.frame = .zero
+//        miscButton.frame = .zero
+//        listOptsButton.frame = .zero
+//        infoLabel.frame = .zero
 
         // Native scroller is hidden in skinned mode — full column width.
         let newWidth = scrollView.frame.width - 2
@@ -319,55 +327,55 @@ class PlaylistView: NSView {
         skinScroller.frame = NSRect(x: 0, y: trackBottom, width: WinampTheme.windowWidth, height: trackH)
     }
 
-    private func layoutUnskinned() {
-        let w = bounds.width
-        let pad: CGFloat = 3
-
-        titleBar.frame = NSRect(x: 0, y: bounds.height - WinampTheme.titleBarHeight,
-                                width: w, height: WinampTheme.titleBarHeight)
-
-        let bottomBarH: CGFloat = 18
-        let searchH: CGFloat = 16
-
-        // Bottom bar — mirrors classic Winamp layout: ADD, REM, SEL, MISC on
-        // the left; LISTS on the right (our stand-in for LIST OPTS).
-        let btnW: CGFloat = 28
-        let btnH: CGFloat = 14
-        let gap: CGFloat = 1
-        addButton.frame  = NSRect(x: pad + (btnW + gap) * 0, y: 2, width: btnW, height: btnH)
-        remButton.frame  = NSRect(x: pad + (btnW + gap) * 1, y: 2, width: btnW, height: btnH)
-        selButton.frame  = NSRect(x: pad + (btnW + gap) * 2, y: 2, width: btnW, height: btnH)
-        miscButton.frame = NSRect(x: pad + (btnW + gap) * 3, y: 2, width: btnW, height: btnH)
-
-        let listOptsW: CGFloat = 36
-        listOptsButton.frame = NSRect(x: w - pad - listOptsW, y: 2, width: listOptsW, height: btnH)
-
-        let infoW: CGFloat = 80
-        let infoFont = infoLabel.font ?? NSFont.systemFont(ofSize: 9)
-        let infoTextH = infoFont.boundingRectForFont.height
-        let infoY = round((bottomBarH - infoTextH) / 2)
-        infoLabel.frame = NSRect(x: w - pad - listOptsW - 4 - infoW, y: infoY, width: infoW, height: infoTextH)
-
-        // Search
-        searchField.frame = NSRect(x: pad, y: bottomBarH, width: w - 2 * pad, height: searchH)
-
-        // Scroll view
-        let scrollTop = bounds.height - WinampTheme.titleBarHeight
-        let scrollH = scrollTop - bottomBarH - searchH - 2
-        scrollView.frame = NSRect(x: pad, y: bottomBarH + searchH + 1, width: w - 2 * pad, height: scrollH)
-
-        // AlwaysVisibleScrollView locks legacy + autohidesScrollers=false, so
-        // the scroller permanently occupies its width on the right edge of the
-        // scroll view. Subtract that width so the column (and the duration
-        // label at its right edge) stays inside the contentView.
-        let scrollerWidth = scrollView.verticalScroller?.frame.width ?? 15
-        let newWidth = scrollView.frame.width - scrollerWidth - 2
-        tableView.tableColumns.first?.width = newWidth
-        if abs(newWidth - lastColumnWidth) > 0.5 {
-            lastColumnWidth = newWidth
-            tableView.reloadData()
-        }
-    }
+//    private func layoutUnskinned() {
+//        let w = bounds.width
+//        let pad: CGFloat = 3
+//
+//        titleBar.frame = NSRect(x: 0, y: bounds.height - WinampTheme.titleBarHeight,
+//                                width: w, height: WinampTheme.titleBarHeight)
+//
+//        let bottomBarH: CGFloat = 18
+//        let searchH: CGFloat = 16
+//
+//        // Bottom bar — mirrors classic Winamp layout: ADD, REM, SEL, MISC on
+//        // the left; LISTS on the right (our stand-in for LIST OPTS).
+//        let btnW: CGFloat = 28
+//        let btnH: CGFloat = 14
+//        let gap: CGFloat = 1
+//        addButton.frame  = NSRect(x: pad + (btnW + gap) * 0, y: 2, width: btnW, height: btnH)
+//        remButton.frame  = NSRect(x: pad + (btnW + gap) * 1, y: 2, width: btnW, height: btnH)
+//        selButton.frame  = NSRect(x: pad + (btnW + gap) * 2, y: 2, width: btnW, height: btnH)
+//        miscButton.frame = NSRect(x: pad + (btnW + gap) * 3, y: 2, width: btnW, height: btnH)
+//
+//        let listOptsW: CGFloat = 36
+//        listOptsButton.frame = NSRect(x: w - pad - listOptsW, y: 2, width: listOptsW, height: btnH)
+//
+//        let infoW: CGFloat = 80
+//        let infoFont = infoLabel.font ?? NSFont.systemFont(ofSize: 9)
+//        let infoTextH = infoFont.boundingRectForFont.height
+//        let infoY = round((bottomBarH - infoTextH) / 2)
+//        infoLabel.frame = NSRect(x: w - pad - listOptsW - 4 - infoW, y: infoY, width: infoW, height: infoTextH)
+//
+//        // Search
+//        searchField.frame = NSRect(x: pad, y: bottomBarH, width: w - 2 * pad, height: searchH)
+//
+//        // Scroll view
+//        let scrollTop = bounds.height - WinampTheme.titleBarHeight
+//        let scrollH = scrollTop - bottomBarH - searchH - 2
+//        scrollView.frame = NSRect(x: pad, y: bottomBarH + searchH + 1, width: w - 2 * pad, height: scrollH)
+//
+//        // AlwaysVisibleScrollView locks legacy + autohidesScrollers=false, so
+//        // the scroller permanently occupies its width on the right edge of the
+//        // scroll view. Subtract that width so the column (and the duration
+//        // label at its right edge) stays inside the contentView.
+//        let scrollerWidth = scrollView.verticalScroller?.frame.width ?? 15
+//        let newWidth = scrollView.frame.width - scrollerWidth - 2
+//        tableView.tableColumns.first?.width = newWidth
+//        if abs(newWidth - lastColumnWidth) > 0.5 {
+//            lastColumnWidth = newWidth
+//            tableView.reloadData()
+//        }
+//    }
 
     func bindToModel(playlistManager: PlaylistManager) {
         self.playlistManager = playlistManager
@@ -376,7 +384,7 @@ class PlaylistView: NSView {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.tableView.reloadData()
-                self?.updateInfoLabel()
+                // self?.updateInfoLabel()
                 // The skinned footer ("N / H:MM" LCD) is drawn in draw(_:),
                 // not by infoLabel — invalidate or it shows stale totals.
                 self?.needsDisplay = true
@@ -400,10 +408,10 @@ class PlaylistView: NSView {
             .store(in: &cancellables)
     }
 
-    private func updateInfoLabel() {
-        guard let pm = playlistManager else { return }
-        infoLabel.stringValue = "\(pm.tracks.count) / \(pm.formattedTotalDurationCompact)"
-    }
+//    private func updateInfoLabel() {
+//        guard let pm = playlistManager else { return }
+//        infoLabel.stringValue = "\(pm.tracks.count) / \(pm.formattedTotalDurationCompact)"
+//    }
 
     @objc private func doubleClickRow() {
         let row = tableView.clickedRow
@@ -455,7 +463,7 @@ class PlaylistView: NSView {
     private enum MenuKind { case add, rem, sel, misc, list }
 
     private func menuAnchor(for kind: MenuKind) -> NSPoint {
-        if WinampTheme.skinIsActive {
+ //       if WinampTheme.skinIsActive {
             let r: NSRect
             switch kind {
             case .add:  r = Self.skinnedAddRect
@@ -465,16 +473,16 @@ class PlaylistView: NSView {
             case .list: r = skinnedListOptsRect()
             }
             return NSPoint(x: r.minX, y: r.maxY)
-        }
-        let b: NSRect
-        switch kind {
-        case .add:  b = addButton.frame
-        case .rem:  b = remButton.frame
-        case .sel:  b = selButton.frame
-        case .misc: b = miscButton.frame
-        case .list: b = listOptsButton.frame
-        }
-        return NSPoint(x: b.minX, y: b.maxY)
+//        }
+//        let b: NSRect
+//        switch kind {
+//        case .add:  b = addButton.frame
+//        case .rem:  b = remButton.frame
+//        case .sel:  b = selButton.frame
+//        case .misc: b = miscButton.frame
+//        case .list: b = listOptsButton.frame
+//        }
+//        return NSPoint(x: b.minX, y: b.maxY)
     }
 
     private func popUpMenu(_ menu: NSMenu, for kind: MenuKind) {
@@ -568,7 +576,7 @@ class PlaylistView: NSView {
     /// type-to-find. In skinned mode there's no visible field, so we show the
     /// field temporarily by ignoring skin visibility for this one control.
     @objc private func miscJumpToFile() {
-        if WinampTheme.skinIsActive {
+ //       if WinampTheme.skinIsActive {
             // Skinned mode has no persistent search UI. Fall back to a prompt.
             let alert = NSAlert()
             alert.messageText = "Jump to File"
@@ -583,8 +591,8 @@ class PlaylistView: NSView {
                 tableView.reloadData()
             }
             return
-        }
-        window?.makeFirstResponder(searchField)
+ //       }
+        // window?.makeFirstResponder(searchField)
     }
 
     private func menuItem(_ title: String, action: Selector) -> NSMenuItem {
@@ -945,9 +953,9 @@ final class AlwaysVisibleScrollView: NSScrollView {
 }
 
 // MARK: - Search
-extension PlaylistView: NSTextFieldDelegate {
-    func controlTextDidChange(_ obj: Notification) {
-        playlistManager?.searchQuery = searchField.stringValue
-        tableView.reloadData()
-    }
-}
+//extension PlaylistView: NSTextFieldDelegate {
+//    func controlTextDidChange(_ obj: Notification) {
+//        playlistManager?.searchQuery = searchField.stringValue
+//        tableView.reloadData()
+//    }
+//}

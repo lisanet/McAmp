@@ -136,13 +136,13 @@ final class JumpToFileWindow: NSPanel, NSTableViewDataSource, NSTableViewDelegat
 
     // MARK: - NSSearchFieldDelegate
 
-    func controlTextDidChange(_ obj: Notification) {
-        recompute()
-        if !matches.isEmpty {
-            tableView.selectRowIndexes(IndexSet(integer: 0), byExtendingSelection: false)
-            tableView.scrollRowToVisible(0)
-        }
-    }
+//    func controlTextDidChange(_ obj: Notification) {
+//        recompute()
+//        if !matches.isEmpty {
+//            tableView.selectRowIndexes(IndexSet(integer: 0), byExtendingSelection: false)
+//            tableView.scrollRowToVisible(0)
+//        }
+//    }
 
     func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
         switch commandSelector {
