@@ -34,16 +34,16 @@ class MainPlayerView: NSView {
     private let plButton = WinampButton(title: "PL", style: .toggle)
 
     // Info labels
-    private let bitrateLabel = NSTextField(labelWithString: "")
-    private let sampleRateLabel = NSTextField(labelWithString: "")
-    private let bitrateUnitLabel = NSTextField(labelWithString: "kbps")
-    private let sampleRateUnitLabel = NSTextField(labelWithString: "khz")
-    private let monoLabel = NSTextField(labelWithString: "mono")
-    private let stereoLabel = NSTextField(labelWithString: "stereo")
+//    private let bitrateLabel = NSTextField(labelWithString: "")
+//    private let sampleRateLabel = NSTextField(labelWithString: "")
+//    private let bitrateUnitLabel = NSTextField(labelWithString: "kbps")
+//    private let sampleRateUnitLabel = NSTextField(labelWithString: "khz")
+//    private let monoLabel = NSTextField(labelWithString: "mono")
+//    private let stereoLabel = NSTextField(labelWithString: "stereo")
 
-    // Panel backgrounds
-    private let leftPanel = NSView()
-    private let rightPanel = NSView()
+//    // Panel backgrounds
+//    private let leftPanel = NSView()
+//    private let rightPanel = NSView()
 
 
     // Play state indicator
@@ -69,12 +69,13 @@ class MainPlayerView: NSView {
 
     /// View height in logical (pre-scale) points. Winamp's main.bmp is exactly
     /// 116 px tall, so when a skin is active we shrink the view to match and
-    /// lay out subviews at the sprite's native pixel coordinates. When no skin
-    /// is loaded, we use McAmp's original 126 px layout.
-    var desiredHeight: CGFloat {
-        WinampTheme.skinIsActive ? 116 : WinampTheme.mainPlayerHeight
-    }
+    /// lay out subviews at the sprite's native pixel coordinates. 
+//    var desiredHeight: CGFloat {
+//        WinampTheme.skinIsActive ? 116 : WinampTheme.mainPlayerHeight
+//    }
 
+    let desiredHeight: CGFloat = 116
+    
     override init(frame: NSRect) {
         super.init(frame: frame)
         wantsLayer = true
@@ -83,28 +84,28 @@ class MainPlayerView: NSView {
         skinObserver = SkinManager.shared.$currentSkin
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.applySkinVisibility()
+                // self?.applySkinVisibility()
                 self?.needsDisplay = true
                 self?.needsLayout = true
             }
-        applySkinVisibility()
+        // applySkinVisibility()
     }
 
     required init?(coder: NSCoder) { fatalError() }
 
     private func setupSubviews() {
         // Title bar
-        titleBar.titleText = "McAmp"
+        // titleBar.titleText = "WAMP"
         titleBar.showButtons = true
         titleBar.onClose = { NSApp.terminate(nil) }
         titleBar.onMinimize = { [weak self] in self?.window?.miniaturize(nil) }
         titleBar.onMenuClick = { [weak self] in self?.showWindowMenu() }
         addSubview(titleBar)
 
-        // Left display panel background
-        leftPanel.wantsLayer = true
-        leftPanel.layer?.backgroundColor = NSColor.black.cgColor
-        addSubview(leftPanel)
+//        // Left display panel background
+//        leftPanel.wantsLayer = true
+//        leftPanel.layer?.backgroundColor = NSColor.black.cgColor
+//        addSubview(leftPanel)
 
 
         // Time display
@@ -116,24 +117,24 @@ class MainPlayerView: NSView {
         spectrumView.wantsLayer = true
         addSubview(spectrumView)
 
-        // Right display panel
-        rightPanel.wantsLayer = true
-        rightPanel.layer?.backgroundColor = NSColor.black.cgColor
-        addSubview(rightPanel)
+//        // Right display panel
+//        rightPanel.wantsLayer = true
+//        rightPanel.layer?.backgroundColor = NSColor.black.cgColor
+//        addSubview(rightPanel)
 
         // LCD (track title)
         addSubview(lcdDisplay)
 
-        // Info labels
-        for label in [bitrateLabel, sampleRateLabel, bitrateUnitLabel, sampleRateUnitLabel, monoLabel, stereoLabel] {
-            label.isBezeled = false
-            label.drawsBackground = false
-            label.isEditable = false
-            label.isSelectable = false
-            label.font = WinampTheme.bitrateFont
-            label.textColor = WinampTheme.greenDimText
-            addSubview(label)
-        }
+//        // Info labels
+//        for label in [bitrateLabel, sampleRateLabel, bitrateUnitLabel, sampleRateUnitLabel, monoLabel, stereoLabel] {
+//            label.isBezeled = false
+//            label.drawsBackground = false
+//            label.isEditable = false
+//            label.isSelectable = false
+//            label.font = WinampTheme.bitrateFont
+//            label.textColor = WinampTheme.greenDimText
+//            addSubview(label)
+//        }
 
         // Seek slider
         seekSlider.maxValue = 1
@@ -153,71 +154,71 @@ class MainPlayerView: NSView {
         // Transport bar
         addSubview(transportBar)
 
-        // Shuffle button (crossing arrows icon)
-        shuffleButton.drawIcon = { rect, active in
-            let color = active ? WinampTheme.buttonTextActive : WinampTheme.buttonTextInactive
-            color.setStroke()
-            let path = NSBezierPath()
-            path.lineWidth = 1.2
-            path.move(to: NSPoint(x: rect.minX + 1, y: rect.midY - 2))
-            path.line(to: NSPoint(x: rect.midX, y: rect.midY + 2))
-            path.line(to: NSPoint(x: rect.maxX - 1, y: rect.midY - 2))
-            path.stroke()
-            let path2 = NSBezierPath()
-            path2.lineWidth = 1.2
-            path2.move(to: NSPoint(x: rect.minX + 1, y: rect.midY + 2))
-            path2.line(to: NSPoint(x: rect.midX, y: rect.midY - 2))
-            path2.line(to: NSPoint(x: rect.maxX - 1, y: rect.midY + 2))
-            path2.stroke()
-        }
+//        // Shuffle button (crossing arrows icon)
+//        shuffleButton.drawIcon = { rect, active in
+//            let color = active ? WinampTheme.buttonTextActive : WinampTheme.buttonTextInactive
+//            color.setStroke()
+//            let path = NSBezierPath()
+//            path.lineWidth = 1.2
+//            path.move(to: NSPoint(x: rect.minX + 1, y: rect.midY - 2))
+//            path.line(to: NSPoint(x: rect.midX, y: rect.midY + 2))
+//            path.line(to: NSPoint(x: rect.maxX - 1, y: rect.midY - 2))
+//            path.stroke()
+//            let path2 = NSBezierPath()
+//            path2.lineWidth = 1.2
+//            path2.move(to: NSPoint(x: rect.minX + 1, y: rect.midY + 2))
+//            path2.line(to: NSPoint(x: rect.midX, y: rect.midY - 2))
+//            path2.line(to: NSPoint(x: rect.maxX - 1, y: rect.midY + 2))
+//            path2.stroke()
+//        }
         addSubview(shuffleButton)
 
-        // Repeat button (loop arrows icon)
-        repeatButton.drawIcon = { [weak self] rect, active in
-            let color = active ? WinampTheme.buttonTextActive : WinampTheme.buttonTextInactive
-            color.setStroke()
-            let path = NSBezierPath()
-            path.lineWidth = 1.2
-            // Top arrow going right
-            path.move(to: NSPoint(x: rect.minX + 2, y: rect.midY + 1))
-            path.line(to: NSPoint(x: rect.maxX - 2, y: rect.midY + 1))
-            path.stroke()
-            // Arrow head right
-            let arr1 = NSBezierPath()
-            arr1.lineWidth = 1.2
-            arr1.move(to: NSPoint(x: rect.maxX - 4, y: rect.midY + 3))
-            arr1.line(to: NSPoint(x: rect.maxX - 2, y: rect.midY + 1))
-            arr1.line(to: NSPoint(x: rect.maxX - 4, y: rect.midY - 1))
-            arr1.stroke()
-            // Bottom arrow going left
-            let path2 = NSBezierPath()
-            path2.lineWidth = 1.2
-            path2.move(to: NSPoint(x: rect.maxX - 2, y: rect.midY - 2))
-            path2.line(to: NSPoint(x: rect.minX + 2, y: rect.midY - 2))
-            path2.stroke()
-            // Arrow head left
-            let arr2 = NSBezierPath()
-            arr2.lineWidth = 1.2
-            arr2.move(to: NSPoint(x: rect.minX + 4, y: rect.midY))
-            arr2.line(to: NSPoint(x: rect.minX + 2, y: rect.midY - 2))
-            arr2.line(to: NSPoint(x: rect.minX + 4, y: rect.midY - 4))
-            arr2.stroke()
-            // Draw "1" for single-track repeat mode
-            if self?.audioEngine?.repeatMode == .track {
-                let font = NSFont.monospacedSystemFont(ofSize: 5.5, weight: .bold)
-                let attrs: [NSAttributedString.Key: Any] = [
-                    .font: font,
-                    .foregroundColor: color
-                ]
-                let str = "1"
-                let size = str.size(withAttributes: attrs)
-                let point = NSPoint(
-                    x: rect.maxX - size.width + 2,
-                    y: rect.minY - 3
-                )
-                str.draw(at: point, withAttributes: attrs)
-            }
-        }
+//        // Repeat button (loop arrows icon)
+//        repeatButton.drawIcon = { [weak self] rect, active in
+//            let color = active ? WinampTheme.buttonTextActive : WinampTheme.buttonTextInactive
+//            color.setStroke()
+//            let path = NSBezierPath()
+//            path.lineWidth = 1.2
+//            // Top arrow going right
+//            path.move(to: NSPoint(x: rect.minX + 2, y: rect.midY + 1))
+//            path.line(to: NSPoint(x: rect.maxX - 2, y: rect.midY + 1))
+//            path.stroke()
+//            // Arrow head right
+//            let arr1 = NSBezierPath()
+//            arr1.lineWidth = 1.2
+//            arr1.move(to: NSPoint(x: rect.maxX - 4, y: rect.midY + 3))
+//            arr1.line(to: NSPoint(x: rect.maxX - 2, y: rect.midY + 1))
+//            arr1.line(to: NSPoint(x: rect.maxX - 4, y: rect.midY - 1))
+//            arr1.stroke()
+//            // Bottom arrow going left
+//            let path2 = NSBezierPath()
+//            path2.lineWidth = 1.2
+//            path2.move(to: NSPoint(x: rect.maxX - 2, y: rect.midY - 2))
+//            path2.line(to: NSPoint(x: rect.minX + 2, y: rect.midY - 2))
+//            path2.stroke()
+//            // Arrow head left
+//            let arr2 = NSBezierPath()
+//            arr2.lineWidth = 1.2
+//            arr2.move(to: NSPoint(x: rect.minX + 4, y: rect.midY))
+//            arr2.line(to: NSPoint(x: rect.minX + 2, y: rect.midY - 2))
+//            arr2.line(to: NSPoint(x: rect.minX + 4, y: rect.midY - 4))
+//            arr2.stroke()
+//            // Draw "1" for single-track repeat mode
+//            if self?.audioEngine?.repeatMode == .track {
+//                let font = NSFont.monospacedSystemFont(ofSize: 5.5, weight: .bold)
+//                let attrs: [NSAttributedString.Key: Any] = [
+//                    .font: font,
+//                    .foregroundColor: color
+//                ]
+//                let str = "1"
+//                let size = str.size(withAttributes: attrs)
+//                let point = NSPoint(
+//                    x: rect.maxX - size.width + 2,
+//                    y: rect.minY - 3
+//                )
+//                str.draw(at: point, withAttributes: attrs)
+//            }
+//        }
         addSubview(repeatButton)
 
         // EQ / PL buttons
@@ -272,24 +273,24 @@ class MainPlayerView: NSView {
 
     /// Hides NSTextField labels and helper NSViews whose visual content is baked
     /// into main.bmp / monoster.bmp / text.bmp when a skin is loaded. See spec §8.
-    private func applySkinVisibility() {
-        let active = WinampTheme.skinIsActive
-        titleBar.isHidden = active
-        titleBar.showMenuIcon = !active
-        leftPanel.isHidden = active
-        rightPanel.isHidden = active
-        bitrateLabel.isHidden = active
-        sampleRateLabel.isHidden = active
-        bitrateUnitLabel.isHidden = active
-        sampleRateUnitLabel.isHidden = active
-        monoLabel.isHidden = active
-        stereoLabel.isHidden = active
-        playIndicator.isHidden = active
-        closeHitZone.isHidden = !active
-        minimizeHitZone.isHidden = !active
-        menuHitZone.isHidden = !active
-        githubHitZone.isHidden = !active
-    }
+//    private func applySkinVisibility() {
+//        let active = WinampTheme.skinIsActive // always true we are dropping unskinned mode
+//        titleBar.isHidden = active
+//        titleBar.showMenuIcon = !active
+//        leftPanel.isHidden = active
+//        rightPanel.isHidden = active
+//        bitrateLabel.isHidden = active
+//        sampleRateLabel.isHidden = active
+//        bitrateUnitLabel.isHidden = active
+//        sampleRateUnitLabel.isHidden = active
+//        monoLabel.isHidden = active
+//        stereoLabel.isHidden = active
+//        playIndicator.isHidden = active
+//        closeHitZone.isHidden = !active
+//        minimizeHitZone.isHidden = !active
+//        menuHitZone.isHidden = !active
+//        githubHitZone.isHidden = !active
+//    }
 
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
@@ -356,13 +357,8 @@ class MainPlayerView: NSView {
 
     override func layout() {
         super.layout()
-        if WinampTheme.skinIsActive {
-            layoutSkinned()
-            audioEngine?.maxSpectrumBars = 19
-        } else {
-            layoutUnskinned()
-            audioEngine?.maxSpectrumBars = 26
-        }
+        layoutSkinned()
+        audioEngine?.maxSpectrumBars = 19
     }
 
     /// Exact Winamp 2.x pixel coordinates, ported from Webamp's main-window.css.
@@ -371,6 +367,11 @@ class MainPlayerView: NSView {
     private func layoutSkinned() {
         let h: CGFloat = bounds.height  // 116
 
+        // FIXME: implement play state sprites
+        playIndicator.isHidden = true
+        
+        titleBar.isHidden = true
+        titleBar.showMenuIcon = false
         // Title bar (hidden, but keep frame valid)
         titleBar.frame = NSRect(x: 0, y: h - 16, width: bounds.width, height: 16)
 
@@ -383,12 +384,12 @@ class MainPlayerView: NSView {
         // Menu icon hit-zone — webamp top-left icon at (6, 3, 9×9)
         menuHitZone.frame = NSRect(x: 6, y: hitY, width: hitSize, height: hitSize)
 
-        // Hidden panels — collapse
-        leftPanel.frame = .zero
-        rightPanel.frame = .zero
-        for label in [bitrateLabel, sampleRateLabel, bitrateUnitLabel, sampleRateUnitLabel, monoLabel, stereoLabel] {
-            label.frame = .zero
-        }
+//        // Hidden panels — collapse
+//        leftPanel.frame = .zero
+//        rightPanel.frame = .zero
+//        for label in [bitrateLabel, sampleRateLabel, bitrateUnitLabel, sampleRateUnitLabel, monoLabel, stereoLabel] {
+//            label.frame = .zero
+//        }
 
         // 7-segment time (webamp #time at 39,26,59,13 → y=77; widened 1px to fit last digit)
         timeDisplay.frame = NSRect(x: 39, y: 77, width: 60, height: 13)
@@ -419,98 +420,98 @@ class MainPlayerView: NSView {
         githubHitZone.frame = NSRect(x: 249, y: 12, width: 18, height: 15)
     }
 
-    private func layoutUnskinned() {
-        let w = bounds.width
-        let pad: CGFloat = 3
-
-        // Title bar
-        titleBar.frame = NSRect(x: 0, y: bounds.height - WinampTheme.titleBarHeight,
-                                width: w, height: WinampTheme.titleBarHeight)
-
-        let contentTop = titleBar.frame.minY - pad
-        let leftPanelW: CGFloat = 110
-        let rightPanelX = leftPanelW + pad + pad
-        let rightPanelW = w - rightPanelX - pad
-        let displayH: CGFloat = 56
-
-        // Left panel (black bg)
-        leftPanel.frame = NSRect(x: pad, y: contentTop - displayH, width: leftPanelW, height: displayH)
-
-        // Time + play state top row (inside left panel area)
-        let timeH: CGFloat = 23
-        let timeSpecGap: CGFloat = 6
-        let specH = displayH - timeH - timeSpecGap - 2
-
-        let indicatorW: CGFloat = 11
-        let indicatorGap: CGFloat = 3
-        let indicatorLeftInset: CGFloat = 8
-        playIndicator.frame = NSRect(x: pad + indicatorLeftInset, y: contentTop - timeH + (timeH - indicatorW) / 2 - 2, width: indicatorW, height: indicatorW)
-        let timeX = pad + indicatorLeftInset + indicatorW + indicatorGap
-        timeDisplay.frame = NSRect(x: timeX, y: contentTop - timeH - 2, width: leftPanelW - (timeX - pad) - 2, height: timeH)
-        spectrumView.frame = NSRect(x: pad + 2, y: contentTop - displayH + 2, width: leftPanelW - 4, height: specH)
-
-
-        // Right panel (black bg)
-        rightPanel.frame = NSRect(x: rightPanelX, y: contentTop - displayH, width: rightPanelW, height: displayH)
-
-        // LCD display
-        lcdDisplay.frame = NSRect(x: rightPanelX + 4, y: contentTop - 22, width: rightPanelW - 8, height: 16)
-
-        // Bitrate info
-        bitrateLabel.frame = NSRect(x: rightPanelX + 4, y: contentTop - 42, width: 22, height: 12)
-        bitrateUnitLabel.frame = NSRect(x: rightPanelX + 22, y: contentTop - 42, width: 22, height: 12)
-        sampleRateLabel.frame = NSRect(x: rightPanelX + 48, y: contentTop - 42, width: 18, height: 12)
-        sampleRateUnitLabel.frame = NSRect(x: rightPanelX + 63, y: contentTop - 42, width: 20, height: 12)
-        monoLabel.frame = NSRect(x: rightPanelX + rightPanelW - 50, y: contentTop - 42, width: 22, height: 12)
-        stereoLabel.frame = NSRect(x: rightPanelX + rightPanelW - 28, y: contentTop - 42, width: 28, height: 12)
-
-        let controlsTop = contentTop - displayH - 3
-
-        // Seek bar
-        seekSlider.frame = NSRect(x: pad, y: controlsTop - 10, width: w - 2 * pad, height: 10)
-
-        // Volume + Balance (balance ~half the width of volume) with a right-side EQ/PL strip
-        let sliderTop = controlsTop - 14
-        let eqPlBtnW: CGFloat = 22
-        let eqPlBtnH: CGFloat = 12
-        let eqPlGap: CGFloat = 2
-        let eqPlStripW = eqPlBtnW * 2 + eqPlGap
-        let slidersRightEdge = w - pad - eqPlStripW - 4
-        let slidersAvailW = slidersRightEdge - pad
-        let sliderGap: CGFloat = 4
-        let volumeW = floor((slidersAvailW - sliderGap) * 2 / 3)
-        let balanceW = slidersAvailW - sliderGap - volumeW
-        volumeSlider.frame = NSRect(x: pad, y: sliderTop - 8, width: volumeW, height: 8)
-        balanceSlider.frame = NSRect(x: pad + volumeW + sliderGap, y: sliderTop - 8, width: balanceW, height: 8)
-
-        // EQ / PL right-aligned on the slider row, vertically centered on the 8px slider strip
-        let eqPlY = sliderTop - 8 + (8 - eqPlBtnH) / 2
-        eqButton.frame = NSRect(x: w - pad - eqPlStripW, y: eqPlY, width: eqPlBtnW, height: eqPlBtnH)
-        plButton.frame = NSRect(x: w - pad - eqPlBtnW,   y: eqPlY, width: eqPlBtnW, height: eqPlBtnH)
-
-        // Transport row
-        let transportTop = sliderTop - 12
-        transportBar.frame = NSRect(x: pad, y: transportTop - 18, width: transportBar.intrinsicContentSize.width, height: 18)
-
-        // Right side of transport row: shuffle, repeat only (EQ/PL moved up to the slider row)
-        let btnH: CGFloat = 16
-        let btnW: CGFloat = 20
-        let toggleX = w - pad - (btnW * 2 + 1)
-        let toggleY = transportTop - btnH - 1
-
-        shuffleButton.frame = NSRect(x: toggleX, y: toggleY, width: btnW, height: btnH)
-        repeatButton.frame = NSRect(x: toggleX + btnW + 1, y: toggleY, width: btnW, height: btnH)
-
-        // Click hit-zones at the locations where main.bmp paints close/minimize.
-        // Webamp positions (top-down): close at (264, 3), minimize at (244, 3), 9×9.
-        // y_appkit = 116 - 3 - 9 = 104. Made slightly larger for easier clicking.
-        let hitSize: CGFloat = 11
-        let hitY: CGFloat = 116 - 3 - hitSize
-        closeHitZone.frame = NSRect(x: 263, y: hitY, width: hitSize, height: hitSize)
-        minimizeHitZone.frame = NSRect(x: 243, y: hitY, width: hitSize, height: hitSize)
-        menuHitZone.frame = .zero
-        githubHitZone.frame = .zero
-    }
+//    private func layoutUnskinned() {
+//        let w = bounds.width
+//        let pad: CGFloat = 3
+//
+//        // Title bar
+//        titleBar.frame = NSRect(x: 0, y: bounds.height - WinampTheme.titleBarHeight,
+//                                width: w, height: WinampTheme.titleBarHeight)
+//
+//        let contentTop = titleBar.frame.minY - pad
+//        let leftPanelW: CGFloat = 110
+//        let rightPanelX = leftPanelW + pad + pad
+//        let rightPanelW = w - rightPanelX - pad
+//        let displayH: CGFloat = 56
+//
+//        // Left panel (black bg)
+//        leftPanel.frame = NSRect(x: pad, y: contentTop - displayH, width: leftPanelW, height: displayH)
+//
+//        // Time + play state top row (inside left panel area)
+//        let timeH: CGFloat = 23
+//        let timeSpecGap: CGFloat = 6
+//        let specH = displayH - timeH - timeSpecGap - 2
+//
+//        let indicatorW: CGFloat = 11
+//        let indicatorGap: CGFloat = 3
+//        let indicatorLeftInset: CGFloat = 8
+//        playIndicator.frame = NSRect(x: pad + indicatorLeftInset, y: contentTop - timeH + (timeH - indicatorW) / 2 - 2, width: indicatorW, height: indicatorW)
+//        let timeX = pad + indicatorLeftInset + indicatorW + indicatorGap
+//        timeDisplay.frame = NSRect(x: timeX, y: contentTop - timeH - 2, width: leftPanelW - (timeX - pad) - 2, height: timeH)
+//        spectrumView.frame = NSRect(x: pad + 2, y: contentTop - displayH + 2, width: leftPanelW - 4, height: specH)
+//
+//
+//        // Right panel (black bg)
+//        rightPanel.frame = NSRect(x: rightPanelX, y: contentTop - displayH, width: rightPanelW, height: displayH)
+//
+//        // LCD display
+//        lcdDisplay.frame = NSRect(x: rightPanelX + 4, y: contentTop - 22, width: rightPanelW - 8, height: 16)
+//
+//        // Bitrate info
+//        bitrateLabel.frame = NSRect(x: rightPanelX + 4, y: contentTop - 42, width: 22, height: 12)
+//        bitrateUnitLabel.frame = NSRect(x: rightPanelX + 22, y: contentTop - 42, width: 22, height: 12)
+//        sampleRateLabel.frame = NSRect(x: rightPanelX + 48, y: contentTop - 42, width: 18, height: 12)
+//        sampleRateUnitLabel.frame = NSRect(x: rightPanelX + 63, y: contentTop - 42, width: 20, height: 12)
+//        monoLabel.frame = NSRect(x: rightPanelX + rightPanelW - 50, y: contentTop - 42, width: 22, height: 12)
+//        stereoLabel.frame = NSRect(x: rightPanelX + rightPanelW - 28, y: contentTop - 42, width: 28, height: 12)
+//
+//        let controlsTop = contentTop - displayH - 3
+//
+//        // Seek bar
+//        seekSlider.frame = NSRect(x: pad, y: controlsTop - 10, width: w - 2 * pad, height: 10)
+//
+//        // Volume + Balance (balance ~half the width of volume) with a right-side EQ/PL strip
+//        let sliderTop = controlsTop - 14
+//        let eqPlBtnW: CGFloat = 22
+//        let eqPlBtnH: CGFloat = 12
+//        let eqPlGap: CGFloat = 2
+//        let eqPlStripW = eqPlBtnW * 2 + eqPlGap
+//        let slidersRightEdge = w - pad - eqPlStripW - 4
+//        let slidersAvailW = slidersRightEdge - pad
+//        let sliderGap: CGFloat = 4
+//        let volumeW = floor((slidersAvailW - sliderGap) * 2 / 3)
+//        let balanceW = slidersAvailW - sliderGap - volumeW
+//        volumeSlider.frame = NSRect(x: pad, y: sliderTop - 8, width: volumeW, height: 8)
+//        balanceSlider.frame = NSRect(x: pad + volumeW + sliderGap, y: sliderTop - 8, width: balanceW, height: 8)
+//
+//        // EQ / PL right-aligned on the slider row, vertically centered on the 8px slider strip
+//        let eqPlY = sliderTop - 8 + (8 - eqPlBtnH) / 2
+//        eqButton.frame = NSRect(x: w - pad - eqPlStripW, y: eqPlY, width: eqPlBtnW, height: eqPlBtnH)
+//        plButton.frame = NSRect(x: w - pad - eqPlBtnW,   y: eqPlY, width: eqPlBtnW, height: eqPlBtnH)
+//
+//        // Transport row
+//        let transportTop = sliderTop - 12
+//        transportBar.frame = NSRect(x: pad, y: transportTop - 18, width: transportBar.intrinsicContentSize.width, height: 18)
+//
+//        // Right side of transport row: shuffle, repeat only (EQ/PL moved up to the slider row)
+//        let btnH: CGFloat = 16
+//        let btnW: CGFloat = 20
+//        let toggleX = w - pad - (btnW * 2 + 1)
+//        let toggleY = transportTop - btnH - 1
+//
+//        shuffleButton.frame = NSRect(x: toggleX, y: toggleY, width: btnW, height: btnH)
+//        repeatButton.frame = NSRect(x: toggleX + btnW + 1, y: toggleY, width: btnW, height: btnH)
+//
+//        // Click hit-zones at the locations where main.bmp paints close/minimize.
+//        // Webamp positions (top-down): close at (264, 3), minimize at (244, 3), 9×9.
+//        // y_appkit = 116 - 3 - 9 = 104. Made slightly larger for easier clicking.
+//        let hitSize: CGFloat = 11
+//        let hitY: CGFloat = 116 - 3 - hitSize
+//        closeHitZone.frame = NSRect(x: 263, y: hitY, width: hitSize, height: hitSize)
+//        minimizeHitZone.frame = NSRect(x: 243, y: hitY, width: hitSize, height: hitSize)
+//        menuHitZone.frame = .zero
+//        githubHitZone.frame = .zero
+//    }
 
     // MARK: - Binding
     func bindToModels(audioEngine: AudioEngine, playlistManager: PlaylistManager, playlistView: PlaylistView) {
@@ -656,9 +657,9 @@ class MainPlayerView: NSView {
 
     private func updateTrackInfo() {
         guard let track = playlistManager?.currentTrack else {
-            lcdDisplay.text = ""
-            bitrateLabel.stringValue = ""
-            sampleRateLabel.stringValue = ""
+//            lcdDisplay.text = ""
+//            bitrateLabel.stringValue = ""
+//            sampleRateLabel.stringValue = ""
             return
         }
 
@@ -678,13 +679,13 @@ class MainPlayerView: NSView {
             if lcdDisplay.text != newText {
                 lcdDisplay.text = newText
             }
-            bitrateLabel.stringValue = "\(track.bitrate > 0 ? "\(track.bitrate)" : "---")"
-            bitrateLabel.textColor = WinampTheme.greenBright
-            sampleRateLabel.stringValue = "\(track.sampleRate > 0 ? "\(track.sampleRate / 1000)" : "--")"
-            sampleRateLabel.textColor = WinampTheme.greenBright
+//            bitrateLabel.stringValue = "\(track.bitrate > 0 ? "\(track.bitrate)" : "---")"
+//            bitrateLabel.textColor = WinampTheme.greenBright
+//            sampleRateLabel.stringValue = "\(track.sampleRate > 0 ? "\(track.sampleRate / 1000)" : "--")"
+//            sampleRateLabel.textColor = WinampTheme.greenBright
         }
-        stereoLabel.textColor = track.isStereo ? WinampTheme.greenBright : WinampTheme.greenDimText
-        monoLabel.textColor = track.isStereo ? WinampTheme.greenDimText : WinampTheme.greenBright
+//        stereoLabel.textColor = track.isStereo ? WinampTheme.greenBright : WinampTheme.greenDimText
+//        monoLabel.textColor = track.isStereo ? WinampTheme.greenDimText : WinampTheme.greenBright
     }
 
     private func showWindowMenu() {
