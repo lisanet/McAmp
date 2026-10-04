@@ -88,7 +88,6 @@ final class PlaylistSkinScroller: NSView {
         let prev = ctx?.imageInterpolation
         ctx?.imageInterpolation = .none
         if let composite = compositeScroller() {
-            debugLog("handleY: \(handleY)")
             composite.draw(at: NSPoint(x: 0, y: handleY), from: .zero, operation: .sourceOver, fraction: 1)
         }
         if let prev = prev { ctx?.imageInterpolation = prev }
