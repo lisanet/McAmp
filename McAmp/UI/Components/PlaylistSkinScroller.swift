@@ -64,15 +64,33 @@ final class PlaylistSkinScroller: NSView {
         let handleY = trackH - frac * trackH
         return handleY
     }
+    
+    private func compositeScroller() -> NSImage? {
+        if let cached = WinampTheme.scrollerCompositeImage { return cached }
+        guard let scroller = WinampTheme.sprite(.playlistScrollHandle(pressed: pressed)) else { return nil }
+        
+        let w = WinampTheme.windowWidth
+        // transparent image over width of window, so scaling later has no artefacts in horizontal positions
+        let result = NSImage(size: NSSize(width: w, height: Self.handleH))
+        result.lockFocus()
+        
+        scroller.draw(at: NSPoint(x: w - 15, y: 0), from: .zero, operation: .sourceOver, fraction: 1)
+        
+        result.unlockFocus()
+        WinampTheme.scrollerCompositeImage = result
+        return result
+    }
 
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
         guard let handleY = currentHandleY() else { return }
-        guard let sprite = WinampTheme.sprite(.playlistScrollHandle(pressed: pressed)) else { return }
         let ctx = NSGraphicsContext.current
         let prev = ctx?.imageInterpolation
         ctx?.imageInterpolation = .none
-        sprite.draw(in: NSRect(x: 0, y: handleY, width: Self.handleW, height: Self.handleH))
+        if let composite = compositeScroller() {
+            debugLog("handleY: \(handleY)")
+            composite.draw(at: NSPoint(x: 0, y: handleY), from: .zero, operation: .sourceOver, fraction: 1)
+        }
         if let prev = prev { ctx?.imageInterpolation = prev }
     }
 

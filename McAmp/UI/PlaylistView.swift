@@ -183,7 +183,8 @@ class PlaylistView: NSView {
         }
         
         if let cached = WinampTheme.plvCompositeImage { return cached }
-
+        let isActive = window?.isKeyWindow ?? true
+        
         guard
             let tl = WinampTheme.sprite(.playlistTopLeftCorner(active: isActive)),
             let tr = WinampTheme.sprite(.playlistTopRightCorner(active: isActive)),
@@ -194,7 +195,7 @@ class PlaylistView: NSView {
             let bl = WinampTheme.sprite(.playlistBottomLeftCorner),
             let br = WinampTheme.sprite(.playlistBottomRightCorner) else { return nil }
         
-        let isActive = window?.isKeyWindow ?? true
+
         let w = WinampTheme.windowWidth
         let h = WinampTheme.playlistMinHeight
         let result = NSImage(size: NSSize(width: w, height: h))
@@ -309,12 +310,13 @@ class PlaylistView: NSView {
             tableView.reloadData()
         }
 
-        // Skin scroll thumb sits in the right-tile area, centered horizontally
-        // within the 20px tile. Track height matches the right-tile vertical span.
+        /// Skin scroller is a bar with width=WinampTheme.windowWidth, height=18 mostly transparent.
+        /// Scroller thumb is on the right side. Thsi way scroller gets scaled identically to the window itself,
+        /// avoiding any scaling  artefacts of slightly misplaced scroller
         let trackTop = h - topH
         let trackBottom = bottomH
         let trackH = max(0, trackTop - trackBottom)
-        skinScroller.frame = NSRect(x: w - 20 + 5, y: trackBottom, width: 8, height: trackH)
+        skinScroller.frame = NSRect(x: 0, y: trackBottom, width: WinampTheme.windowWidth, height: trackH)
     }
 
     private func layoutUnskinned() {
