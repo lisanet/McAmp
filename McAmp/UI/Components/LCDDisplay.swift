@@ -55,15 +55,7 @@ class LCDDisplay: NSView {
     required init?(coder: NSCoder) { fatalError() }
 
     private func textWidth(_ str: String) -> CGFloat {
-        if WinampTheme.skinIsActive {
-            return TextSpriteRenderer.width(of: str)
-        } else {
-            let attrs: [NSAttributedString.Key: Any] = [
-                .font: WinampTheme.trackTitleFont,
-                .foregroundColor: WinampTheme.greenBright
-            ]
-            return str.size(withAttributes: attrs).width
-        }
+        return TextSpriteRenderer.width(of: str)
     }
 
     private func renderSkinnedText(_ string: String, width: CGFloat, sheet: NSImage) -> NSImage {
@@ -119,11 +111,7 @@ class LCDDisplay: NSView {
 
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
-        if WinampTheme.skinIsActive {
-            drawSkinned()
-        } else {
-            drawBuiltIn()
-        }
+        drawSkinned()
     }
 
     private func drawSkinned() {
@@ -146,39 +134,6 @@ class LCDDisplay: NSView {
                 startX += cycleWidth
             }
         }
-    }
-
-    private func drawBuiltIn() {
-        let attrs: [NSAttributedString.Key: Any] = [
-            .font: WinampTheme.trackTitleFont,
-            .foregroundColor: WinampTheme.greenBright
-        ]
-
-        if let overlay = overlayText {
-            let size = overlay.size(withAttributes: attrs)
-            let y = (bounds.height - size.height) / 2
-            overlay.draw(at: NSPoint(x: 2, y: y), withAttributes: attrs)
-            return
-        }
-        guard !text.isEmpty else { return }
-        let titleWidth = text.size(withAttributes: attrs).width
-        let y = (bounds.height - size(attrs: attrs).height) / 2
-
-        if titleWidth <= bounds.width || !isScrolling {
-            text.draw(at: NSPoint(x: 2, y: y), withAttributes: attrs)
-        } else {
-            let cycleText = text + separator
-            let cycleWidth = cycleText.size(withAttributes: attrs).width
-            var startX = 2.0 - scrollOffset
-            while startX < bounds.width {
-                cycleText.draw(at: NSPoint(x: startX, y: y), withAttributes: attrs)
-                startX += cycleWidth
-            }
-        }
-    }
-
-    private func size(attrs: [NSAttributedString.Key: Any]) -> NSSize {
-        text.size(withAttributes: attrs)
     }
 
     deinit {

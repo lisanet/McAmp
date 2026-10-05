@@ -31,6 +31,28 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         app.run()
     }
 
+    private func loadStartupSkin(_ appState: AppState) {
+        let bundledURL = Bundle.main.url(forResource: "base-2.91",withExtension: "wsz")!
+
+        // Try previously selected skin first.
+        if let path = appState.skinPath, FileManager.default.fileExists(atPath: path) {
+            do {
+                try SkinManager.shared.loadSkinSync(
+                    from: URL(fileURLWithPath: path)
+                )
+                return
+            } catch {
+                print("Failed to load saved skin: \(error)")
+            }
+        }
+        // Fall back to bundled default skin.
+        do {
+            try SkinManager.shared.loadSkinSync(from: bundledURL)
+        } catch {
+            fatalError("Failed to load bundled default skin: \(error)")
+        }
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
 
@@ -64,11 +86,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         playlistManager.autoPlay = appState.autoPlay
         if playlistManager.autoPlay { playlistManager.autoPlayOnStartup = true } // clear playlist if autoplay
         
-        // Restore saved skin (synchronous to avoid window flicker)
-        if let path = appState.skinPath, FileManager.default.fileExists(atPath: path) {
-            try? SkinManager.shared.loadSkinSync(from: URL(fileURLWithPath: path))
-        }
-
+        loadStartupSkin(appState)
+        
         // Create window
         mainWindow = MainWindow()
         mainWindow.bindToModels(audioEngine: audioEngine, playlistManager: playlistManager)
@@ -294,13 +313,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         autoPlay.state = state.autoPlay ? .on : .off
         let loadSkin = item("Load Skin…", #selector(loadSkinAction), "S", symbol: "paintpalette")
         loadSkin.keyEquivalentModifierMask = [.command, .shift]
-        let unloadSkin = item("Unload Skin", #selector(unloadSkinAction), "", symbol: "paintpalette.fill")
 
         return AppMenuItems(
             app: [about, .separator()],
             file: [openFile, importMusic, .separator(),
                    newList, loadList, saveList, .separator(),
-                   loadSkin, unloadSkin],
+                   loadSkin],
             edit: [selectAll],
             controls: [playPause, stop, next, prev, .separator(),
                        repeat_, shuffle, autoPlay, .separator(), jump],
@@ -560,14 +578,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    @objc private func unloadSkinAction() {
-        SkinManager.shared.unloadSkin()
-        var state = stateManager.loadAppState()
-        state.skinPath = nil
-        stateManager.saveAppState(state)
-        mainWindow.recalculateSize()
-        mainWindow.applyRegionMaskFromCurrentSkin()
-    }
 
     // MARK: - System Tray
     private func setupStatusItem() {

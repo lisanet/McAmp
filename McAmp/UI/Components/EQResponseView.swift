@@ -15,11 +15,7 @@ class EQResponseView: NSView {
 
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
-        if WinampTheme.skinIsActive {
-            drawSkinned()
-        } else {
-            drawBuiltIn()
-        }
+        drawSkinned()
     }
 
     private func drawSkinned() {
@@ -43,26 +39,6 @@ class EQResponseView: NSView {
             // Skin somehow lacks the palette — fall back to the built-in hue gradient.
             drawPixelCurve(in: b) { row, rowCount in hueGradient(row: row, rowCount: rowCount) }
         }
-    }
-
-    private func drawBuiltIn() {
-        let b = bounds
-
-        let bgGradient = NSGradient(starting: WinampTheme.eqSliderBgTop, ending: WinampTheme.eqSliderBgBottom)
-        bgGradient?.draw(in: b, angle: 90)
-
-        // Grid: 10 pale vertical guides (one per EQ band)
-        let bandCount = 10
-        NSColor.white.withAlphaComponent(0.18).setFill()
-        for i in 0..<bandCount {
-            let x = round(b.width * (CGFloat(i) + 0.5) / CGFloat(bandCount))
-            NSRect(x: x, y: 0, width: 1, height: b.height).fill()
-        }
-
-        NSColor.white.withAlphaComponent(0.35).setFill()
-        NSRect(x: 0, y: round(b.midY), width: b.width, height: 1).fill()
-
-        drawPixelCurve(in: b) { row, rowCount in hueGradient(row: row, rowCount: rowCount) }
     }
 
     /// Green→red hue by row position (top = red/boost, bottom = green/cut).

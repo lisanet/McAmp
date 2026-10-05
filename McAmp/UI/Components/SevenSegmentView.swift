@@ -35,42 +35,7 @@ class SevenSegmentView: NSView {
         let minutes = totalSeconds / 60
         let seconds = totalSeconds % 60
 
-        if WinampTheme.skinIsActive {
-            drawSkinned(minutes: minutes, seconds: seconds)
-            return
-        }
-
-        let digitWidth: CGFloat = 14
-        let colonWidth: CGFloat = 6
-        let digitHeight = bounds.height
-
-        // Layout: M : S S (or MM : SS if >= 10 min). Clamp at 99 like the
-        // skinned path — `minutes / 10` past 100 isn't a drawable digit and
-        // the leading digit would silently vanish.
-        let mm = min(99, minutes)
-        var digits: [Int] = []
-        if mm >= 10 {
-            digits.append(mm / 10)
-        }
-        digits.append(mm % 10)
-
-        let totalWidth = CGFloat(digits.count + 2) * digitWidth + colonWidth
-        var x = (bounds.width - totalWidth) / 2
-
-        // Minutes digits
-        for d in digits {
-            drawDigit(d, at: NSRect(x: x, y: 0, width: digitWidth, height: digitHeight))
-            x += digitWidth
-        }
-
-        // Colon
-        drawColon(at: NSRect(x: x, y: 0, width: colonWidth, height: digitHeight))
-        x += colonWidth
-
-        // Seconds
-        drawDigit(seconds / 10, at: NSRect(x: x, y: 0, width: digitWidth, height: digitHeight))
-        x += digitWidth
-        drawDigit(seconds % 10, at: NSRect(x: x, y: 0, width: digitWidth, height: digitHeight))
+        drawSkinned(minutes: minutes, seconds: seconds)
     }
 
     /// Skinned path: always MM:SS, native 9×13 digit sprites at the exact
@@ -90,50 +55,5 @@ class SevenSegmentView: NSView {
             guard let sprite = WinampTheme.sprite(.digit(d)) else { continue }
             sprite.draw(in: NSRect(x: xs[i], y: 0, width: size.width, height: size.height))
         }
-    }
-
-    private func drawDigit(_ digit: Int, at rect: NSRect) {
-        guard digit >= 0, digit <= 9 else { return }
-        // Sprite path: blit numbers.bmp glyph if a skin is loaded.
-        if WinampTheme.skinIsActive, let sprite = WinampTheme.sprite(.digit(digit)) {
-            let ctx = NSGraphicsContext.current
-            let prev = ctx?.imageInterpolation
-            ctx?.imageInterpolation = .none
-            sprite.draw(in: rect)
-            if let prev = prev { ctx?.imageInterpolation = prev }
-            return
-        }
-        let segs = digitSegments[digit]
-        let w = rect.width - 2
-        let h = rect.height - 2
-        let x = rect.minX + 1
-        let y = rect.minY + 1
-        let t: CGFloat = 2 // segment thickness
-        let mid = y + h / 2
-
-        let segRects: [NSRect] = [
-            NSRect(x: x + t, y: y + h - t, width: w - 2 * t, height: t),       // a top
-            NSRect(x: x + w - t, y: mid, width: t, height: h / 2 - t),          // b topRight
-            NSRect(x: x + w - t, y: y + t, width: t, height: h / 2 - t),        // c bottomRight
-            NSRect(x: x + t, y: y, width: w - 2 * t, height: t),                // d bottom
-            NSRect(x: x, y: y + t, width: t, height: h / 2 - t),                // e bottomLeft
-            NSRect(x: x, y: mid, width: t, height: h / 2 - t),                  // f topLeft
-            NSRect(x: x + t, y: mid - t / 2, width: w - 2 * t, height: t),      // g middle
-        ]
-
-        for (i, segRect) in segRects.enumerated() {
-            let color = segs[i] ? WinampTheme.greenBright : WinampTheme.greenDim
-            color.setFill()
-            segRect.fill()
-        }
-    }
-
-    private func drawColon(at rect: NSRect) {
-        let dotSize: CGFloat = 2
-        let cx = rect.midX - dotSize / 2
-
-        WinampTheme.greenBright.setFill()
-        NSRect(x: cx, y: rect.midY + 3, width: dotSize, height: dotSize).fill()
-        NSRect(x: cx, y: rect.midY - 3 - dotSize, width: dotSize, height: dotSize).fill()
     }
 }

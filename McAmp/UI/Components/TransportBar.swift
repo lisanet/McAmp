@@ -33,13 +33,6 @@ class TransportBar: NSView {
 
         // [weak self]: the bar retains the buttons; a strong capture here is
         // a retain cycle that keeps the whole bar alive forever.
-        prevButton.drawIcon = { [weak self] rect, _ in self?.drawPrevIcon(in: rect) }
-        playButton.drawIcon = { [weak self] rect, active in self?.drawPlayIcon(in: rect, active: active) }
-        pauseButton.drawIcon = { [weak self] rect, _ in self?.drawPauseIcon(in: rect) }
-        stopButton.drawIcon = { [weak self] rect, _ in self?.drawStopIcon(in: rect) }
-        nextButton.drawIcon = { [weak self] rect, _ in self?.drawNextIcon(in: rect) }
-        ejectButton.drawIcon = { [weak self] rect, _ in self?.drawEjectIcon(in: rect) }
-
         prevButton.onClick = { [weak self] in self?.onPrevious?() }
         playButton.onClick = { [weak self] in self?.onPlay?() }
         pauseButton.onClick = { [weak self] in self?.onPause?() }
@@ -79,68 +72,6 @@ class TransportBar: NSView {
     }
 
     override var intrinsicContentSize: NSSize {
-        NSSize(width: 6 * 22 + 5, height: 18)
-    }
-
-    // MARK: - Icon Drawing
-    private func drawPrevIcon(in rect: NSRect) {
-        WinampTheme.buttonIconDefault.setFill()
-        let cx = rect.midX
-        let cy = rect.midY
-        NSRect(x: cx - 5, y: cy - 4, width: 2, height: 8).fill()
-        let tri = NSBezierPath()
-        tri.move(to: NSPoint(x: cx + 3, y: cy - 4))
-        tri.line(to: NSPoint(x: cx - 2, y: cy))
-        tri.line(to: NSPoint(x: cx + 3, y: cy + 4))
-        tri.close()
-        tri.fill()
-    }
-
-    private func drawPlayIcon(in rect: NSRect, active: Bool) {
-        let color = active ? WinampTheme.buttonTextActive : WinampTheme.buttonIconDefault
-        color.setFill()
-        let tri = NSBezierPath()
-        tri.move(to: NSPoint(x: rect.midX - 3, y: rect.midY - 4))
-        tri.line(to: NSPoint(x: rect.midX + 4, y: rect.midY))
-        tri.line(to: NSPoint(x: rect.midX - 3, y: rect.midY + 4))
-        tri.close()
-        tri.fill()
-    }
-
-    private func drawPauseIcon(in rect: NSRect) {
-        WinampTheme.buttonIconDefault.setFill()
-        NSRect(x: rect.midX - 4, y: rect.midY - 4, width: 3, height: 8).fill()
-        NSRect(x: rect.midX + 1, y: rect.midY - 4, width: 3, height: 8).fill()
-    }
-
-    private func drawStopIcon(in rect: NSRect) {
-        WinampTheme.buttonIconDefault.setFill()
-        NSRect(x: rect.midX - 4, y: rect.midY - 4, width: 8, height: 8).fill()
-    }
-
-    private func drawNextIcon(in rect: NSRect) {
-        WinampTheme.buttonIconDefault.setFill()
-        let cx = rect.midX
-        let cy = rect.midY
-        let tri = NSBezierPath()
-        tri.move(to: NSPoint(x: cx - 3, y: cy - 4))
-        tri.line(to: NSPoint(x: cx + 2, y: cy))
-        tri.line(to: NSPoint(x: cx - 3, y: cy + 4))
-        tri.close()
-        tri.fill()
-        NSRect(x: cx + 3, y: cy - 4, width: 2, height: 8).fill()
-    }
-
-    private func drawEjectIcon(in rect: NSRect) {
-        WinampTheme.buttonIconDefault.setFill()
-        let cx = rect.midX
-        let cy = rect.midY
-        let tri = NSBezierPath()
-        tri.move(to: NSPoint(x: cx - 4, y: cy - 1))
-        tri.line(to: NSPoint(x: cx, y: cy + 4))
-        tri.line(to: NSPoint(x: cx + 4, y: cy - 1))
-        tri.close()
-        tri.fill()
-        NSRect(x: cx - 4, y: cy - 4, width: 8, height: 2).fill()
+        NSSize(width: 6 * 22 + 4 + 6, height: 18)
     }
 }

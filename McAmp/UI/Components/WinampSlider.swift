@@ -52,16 +52,7 @@ class WinampSlider: NSView {
 
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
-        if WinampTheme.skinIsActive {
-            drawSkinned()
-            return
-        }
-        let b = bounds
-        if isVertical {
-            drawVerticalSlider(in: b)
-        } else {
-            drawHorizontalSlider(in: b)
-        }
+        drawSkinned()
     }
 
     private func drawSkinned() {
@@ -116,130 +107,6 @@ class WinampSlider: NSView {
                 thumb.draw(in: NSRect(x: 1, y: thumbY, width: 11, height: 11))
             }
         }
-    }
-
-    private func drawHorizontalSlider(in rect: NSRect) {
-        let trackY = rect.midY - 3
-        let trackRect = NSRect(x: 1, y: trackY, width: rect.width - 2, height: 6)
-
-        // Track background
-        switch style {
-        case .volume:
-            WinampTheme.lcdBackground.setFill()
-            trackRect.fill()
-        default:
-            WinampTheme.lcdBackground.setFill()
-            trackRect.fill()
-        }
-
-        // Inset border
-        drawInsetBorder(trackRect)
-
-        // Fill
-        let fillWidth = trackRect.width * normalizedValue
-        switch style {
-        case .volume:
-            let fillRect = NSRect(x: trackRect.minX + 1, y: trackY + 1, width: fillWidth, height: 4)
-            Self.skinColor(at: normalizedValue).setFill()
-            fillRect.fill()
-        case .balance:
-            let fullRect = NSRect(x: trackRect.minX + 1, y: trackY + 1, width: trackRect.width - 2, height: 4)
-            let distance = abs(normalizedValue - 0.5) * 2
-            Self.skinColor(at: distance).setFill()
-            fullRect.fill()
-        default:
-            let fillRect = NSRect(x: trackRect.minX + 1, y: trackY + 1, width: fillWidth, height: 4)
-            let gradient = NSGradient(starting: WinampTheme.seekFillTop, ending: WinampTheme.seekFillBottom)
-            gradient?.draw(in: fillRect, angle: 90)
-        }
-
-        // Thumb — clamped so it doesn't overflow into adjacent sliders
-        let thumbW: CGFloat = 14
-        let thumbH: CGFloat = rect.height
-        let thumbX = min(rect.width - thumbW, max(0, trackRect.minX + fillWidth - thumbW / 2))
-        let thumbRect = NSRect(x: thumbX, y: 0, width: thumbW, height: thumbH)
-        drawThumb(thumbRect, isVolumeStyle: style == .volume)
-    }
-
-    private func drawVerticalSlider(in rect: NSRect) {
-        let trackX = rect.midX - 4
-        let trackRect = NSRect(x: trackX, y: 0, width: 8, height: rect.height)
-
-        // Dark solid track background
-        WinampTheme.eqTrackBackground.setFill()
-        NSBezierPath(rect: trackRect).fill()
-        drawInsetBorder(trackRect)
-
-        // Single flat color based on slider position, from Winamp 2.x skin palette.
-        let thumbY = rect.height * normalizedValue
-        let fillRect = NSRect(x: trackRect.minX + 1, y: trackRect.minY + 1, width: trackRect.width - 2, height: max(0, trackRect.height - 2))
-        Self.skinColor(at: normalizedValue).setFill()
-        fillRect.fill()
-
-        // Thumb
-        let eqThumbH: CGFloat = 4
-        let eqThumbW: CGFloat = 12
-        let eqThumbRect = NSRect(x: rect.midX - eqThumbW / 2, y: thumbY - eqThumbH / 2, width: eqThumbW, height: eqThumbH)
-        drawEQThumb(eqThumbRect)
-    }
-
-    private func drawThumb(_ rect: NSRect, isVolumeStyle: Bool) {
-        if isVolumeStyle {
-            let gradient = NSGradient(colors: [WinampTheme.volumeThumbTop, WinampTheme.volumeThumbMid, WinampTheme.volumeThumbBottom])
-            gradient?.draw(in: rect, angle: 90)
-            WinampTheme.volumeThumbBorderLight.setStroke()
-            NSBezierPath(rect: rect).stroke()
-        } else {
-            let gradient = NSGradient(colors: [WinampTheme.seekThumbTop, WinampTheme.seekThumbMid, WinampTheme.seekThumbBottom])
-            gradient?.draw(in: rect, angle: 90)
-            WinampTheme.seekThumbBorderLight.setStroke()
-            NSBezierPath(rect: rect).stroke()
-        }
-    }
-
-    private func drawEQThumb(_ rect: NSRect) {
-        let gradient = NSGradient(colors: [WinampTheme.eqThumbTop, WinampTheme.eqThumbMid, WinampTheme.eqThumbBottom])
-        gradient?.draw(in: rect, angle: 90)
-        WinampTheme.eqThumbBorderLight.setStroke()
-        let path = NSBezierPath(roundedRect: rect, xRadius: 1, yRadius: 1)
-        path.lineWidth = 0.5
-        path.stroke()
-    }
-
-    /// 19-stop slider palette, stored green→red so index 0 = green (t=0) and index 18 = red (t=1).
-    private static let sliderPalette: [UInt32] = [
-        0x2a9a16, 0x2a9a16, 0x5ab02c, 0x71cd34, 0x89e230,
-        0xa4e238, 0xa4e238, 0xd2eb35, 0xd2eb35, 0xefdc31,
-        0xefdc31, 0xefdc31, 0xe0b228, 0xe09228, 0xe09228,
-        0xe09228, 0xef7b21, 0xef5221, 0xd3221b
-    ]
-
-    /// Returns a discrete color from the 19-stop green→red Winamp slider palette.
-    private static func skinColor(at t: CGFloat) -> NSColor {
-        let index = max(0, min(18, Int(round(t * 18))))
-        let hex = sliderPalette[index]
-        return NSColor(srgbRed: CGFloat((hex >> 16) & 0xFF) / 255.0,
-                       green: CGFloat((hex >> 8) & 0xFF) / 255.0,
-                       blue: CGFloat(hex & 0xFF) / 255.0,
-                       alpha: 1.0)
-    }
-
-    private func drawInsetBorder(_ rect: NSRect) {
-        let path = NSBezierPath()
-        WinampTheme.insetBorderDark.setStroke()
-        path.move(to: NSPoint(x: rect.minX, y: rect.maxY))
-        path.line(to: NSPoint(x: rect.minX, y: rect.minY))
-        path.line(to: NSPoint(x: rect.maxX, y: rect.minY))
-        path.lineWidth = 1
-        path.stroke()
-
-        let path2 = NSBezierPath()
-        WinampTheme.insetBorderLight.setStroke()
-        path2.move(to: NSPoint(x: rect.maxX, y: rect.minY))
-        path2.line(to: NSPoint(x: rect.maxX, y: rect.maxY))
-        path2.line(to: NSPoint(x: rect.minX, y: rect.maxY))
-        path2.lineWidth = 1
-        path2.stroke()
     }
 
     // MARK: - Mouse Handling
