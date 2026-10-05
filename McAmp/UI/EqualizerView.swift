@@ -39,10 +39,6 @@ class EqualizerView: NSView {
     private let preampSlider = WinampSlider(style: .eqBand, isVertical: true)
     private let responseView = EQResponseView()
     private var bandSliders: [WinampSlider] = []
-//    private var bandLabels: [NSTextField] = []
-//    private var dbLabels: [NSTextField] = []
-//    private var preLabel: NSTextField?
-//    private var dbUnitLabel: NSTextField?
     private var cancellables = Set<AnyCancellable>()
     private var skinObserver: AnyCancellable?
     private weak var audioEngine: AudioEngine?
@@ -118,51 +114,7 @@ class EqualizerView: NSView {
             }
             bandSliders.append(slider)
             addSubview(slider)
-
-//            let label = NSTextField(labelWithString: bandNames[i])
-//            label.font = WinampTheme.eqLabelFont
-//            label.textColor = NSColor(calibratedRed: 0.90, green: 0.88, blue: 0.75, alpha: 1.0)
-//            label.isBezeled = false
-//            label.drawsBackground = false
-//            label.alignment = .center
-//            bandLabels.append(label)
-//            addSubview(label)
         }
-
-        // dB labels
-//        for (text, tag) in [("+12 db", 200), ("0 db", 201), ("-12 db", 202)] {
-//            let label = NSTextField(labelWithString: text)
-//            label.font = WinampTheme.eqLabelFont
-//            label.textColor = WinampTheme.preampLabelOrange
-//            label.isBezeled = false
-//            label.drawsBackground = false
-//            label.alignment = .right
-//            label.tag = tag
-//            addSubview(label)
-//            dbLabels.append(label)
-//        }
-
-        // Preamp label
-//        let pre = NSTextField(labelWithString: "PREAMP")
-//        pre.font = WinampTheme.eqLabelFont
-//        pre.textColor = WinampTheme.eqBandLabelColor
-//        pre.isBezeled = false
-//        pre.drawsBackground = false
-//        pre.alignment = .center
-//        pre.tag = 210
-//        addSubview(pre)
-//        preLabel = pre
-
-        // dB label under response
-//        let dbU = NSTextField(labelWithString: "dB")
-//        dbU.font = WinampTheme.eqLabelFont
-//        dbU.textColor = WinampTheme.eqBandLabelColor
-//        dbU.isBezeled = false
-//        dbU.drawsBackground = false
-//        dbU.alignment = .center
-//        dbU.tag = 211
-//        addSubview(dbU)
-//        dbUnitLabel = dbU
 
         // Wire EQ button sprite providers (sprites from eqmain.bmp)
         onButton.spriteKeyProvider = { active, pressed in .eqOnButton(active: active, pressed: pressed) }
@@ -207,30 +159,6 @@ class EqualizerView: NSView {
         }
     }
 
-//    private func drawUnskinnedDecorations() {
-//        let pad: CGFloat = 4
-//        let preampX: CGFloat = pad + 6
-//        let sliderH: CGFloat = 56
-//        let controlsY = bounds.height - WinampTheme.titleBarHeight - 16
-//        let sliderAreaTop = controlsY - 10
-//        let sliderBottom = sliderAreaTop - sliderH
-//
-//        // Five pale horizontal stripes running across the full EQ area
-//        // (preamp + bands), evenly spaced through the slider track — classic
-//        // eqmain.bmp pattern.
-//        let stripeColor = NSColor(white: 1.0, alpha: 0.08)
-//        stripeColor.setFill()
-//        let stripeX = preampX - 2
-//        let stripeEnd = bounds.width - pad
-//        let stripeW = max(0, stripeEnd - stripeX)
-//        let steps = 4
-//        for i in 0...steps {
-//            let t = CGFloat(i) / CGFloat(steps)
-//            let y = sliderBottom + t * sliderH
-//            NSRect(x: stripeX, y: y - 0.5, width: stripeW, height: 1).fill()
-//        }
-//    }
-
     override func layout() {
         super.layout()
         layoutSkinned()
@@ -263,62 +191,7 @@ class EqualizerView: NSView {
         for i in 0..<10 {
             bandSliders[i].frame = NSRect(x: 78 + CGFloat(i) * 18, y: 15, width: 14, height: 63)
         }
-
-        // Hidden labels — collapse
-//        for label in bandLabels { label.frame = .zero }
-//        for label in dbLabels { label.frame = .zero }
-//        preLabel?.frame = .zero
-//        dbUnitLabel?.frame = .zero
     }
-
-//    private func layoutUnskinned() {
-//        let w = bounds.width
-//        let pad: CGFloat = 4
-//
-//        titleBar.frame = NSRect(x: 0, y: bounds.height - WinampTheme.titleBarHeight,
-//                                width: w, height: WinampTheme.titleBarHeight)
-//
-//        let controlsY = bounds.height - WinampTheme.titleBarHeight - 16
-//        onButton.frame = NSRect(x: pad, y: controlsY, width: 26, height: 14)
-//        autoButton.frame = NSRect(x: pad + 28, y: controlsY, width: 30, height: 14)
-//        presetsButton.frame = NSRect(x: w - pad - 50, y: controlsY, width: 50, height: 14)
-//
-//        // Response view lives in the controls row, between AUTO and PRESETS.
-//        let respGap: CGFloat = 6
-//        let respX = autoButton.frame.maxX + respGap
-//        let respWidth = presetsButton.frame.minX - respX - respGap
-//        let respH: CGFloat = 19
-//        let titleBottom = bounds.height - WinampTheme.titleBarHeight
-//        let respY = titleBottom - 3 - respH
-//        responseView.frame = NSRect(x: respX, y: respY, width: max(0, respWidth), height: respH)
-//
-//        let sliderH: CGFloat = 56
-//        let sliderAreaTop = controlsY - 10
-//
-//        // Preamp on the leftmost column (right-shifted a few px for breathing room)
-//        let preampX: CGFloat = pad + 6
-//        preampSlider.frame = NSRect(x: preampX, y: sliderAreaTop - sliderH, width: 12, height: sliderH)
-//        viewWithTag(210)?.frame = NSRect(x: preampX - 14, y: sliderAreaTop - sliderH - 14, width: 40, height: 10)
-//
-//        // dB labels — right of preamp slider
-//        let dbLabelW: CGFloat = 26
-//        let dbLabelX = preampX + 14
-//        viewWithTag(200)?.frame = NSRect(x: dbLabelX, y: sliderAreaTop - 10, width: dbLabelW, height: 10)
-//        viewWithTag(201)?.frame = NSRect(x: dbLabelX, y: sliderAreaTop - sliderH / 2 - 5, width: dbLabelW, height: 10)
-//        viewWithTag(202)?.frame = NSRect(x: dbLabelX, y: sliderAreaTop - sliderH, width: dbLabelW, height: 10)
-//        viewWithTag(211)?.frame = .zero
-//
-//        // Band sliders
-//        let bandsStart = dbLabelX + dbLabelW + 2
-//        let bandsWidth = w - bandsStart - pad
-//        let bandSpacing = bandsWidth / CGFloat(10)
-//
-//        for i in 0..<10 {
-//            let x = bandsStart + CGFloat(i) * bandSpacing + (bandSpacing - 12) / 2
-//            bandSliders[i].frame = NSRect(x: x, y: sliderAreaTop - sliderH, width: 12, height: sliderH)
-//            bandLabels[i].frame = NSRect(x: x - 4, y: sliderAreaTop - sliderH - 14, width: 20, height: 10)
-//        }
-//    }
 
     func bindToModel(audioEngine: AudioEngine, playlistManager: PlaylistManager? = nil) {
         self.audioEngine = audioEngine
