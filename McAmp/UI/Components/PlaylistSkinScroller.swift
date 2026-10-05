@@ -93,6 +93,17 @@ final class PlaylistSkinScroller: NSView {
         if let prev = prev { ctx?.imageInterpolation = prev }
     }
 
+    private var handleRect: NSRect? {
+        guard let handleY = currentHandleY() else { return nil}
+        return NSRect(x: bounds.width - 15, y: handleY, width: Self.handleW, height: Self.handleH)
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        let p = convert(point, from: superview)
+        guard let handleRect, handleRect.contains(p) else { return nil }
+        return self
+    }
+    
     // MARK: - Mouse interaction
 
     override func mouseDown(with event: NSEvent) {
