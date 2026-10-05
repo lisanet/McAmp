@@ -69,10 +69,7 @@ class MainPlayerView: NSView {
 
     /// View height in logical (pre-scale) points. Winamp's main.bmp is exactly
     /// 116 px tall, so when a skin is active we shrink the view to match and
-    /// lay out subviews at the sprite's native pixel coordinates. 
-//    var desiredHeight: CGFloat {
-//        WinampTheme.skinIsActive ? 116 : WinampTheme.mainPlayerHeight
-//    }
+    /// lay out subviews at the sprite's native pixel coordinates.
 
     let desiredHeight: CGFloat = 116
     
@@ -271,30 +268,8 @@ class MainPlayerView: NSView {
         }
     }
 
-    /// Hides NSTextField labels and helper NSViews whose visual content is baked
-    /// into main.bmp / monoster.bmp / text.bmp when a skin is loaded. See spec §8.
-//    private func applySkinVisibility() {
-//        let active = WinampTheme.skinIsActive // always true we are dropping unskinned mode
-//        titleBar.isHidden = active
-//        titleBar.showMenuIcon = !active
-//        leftPanel.isHidden = active
-//        rightPanel.isHidden = active
-//        bitrateLabel.isHidden = active
-//        sampleRateLabel.isHidden = active
-//        bitrateUnitLabel.isHidden = active
-//        sampleRateUnitLabel.isHidden = active
-//        monoLabel.isHidden = active
-//        stereoLabel.isHidden = active
-//        playIndicator.isHidden = active
-//        closeHitZone.isHidden = !active
-//        minimizeHitZone.isHidden = !active
-//        menuHitZone.isHidden = !active
-//        githubHitZone.isHidden = !active
-//    }
-
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
-        guard WinampTheme.skinIsActive else { return }
         drawSkinned()
     }
 
@@ -730,7 +705,6 @@ class MainPlayerView: NSView {
     // bar area (top 14px of the 116px skin) directly in MainPlayerView.
 
     override func mouseDown(with event: NSEvent) {
-        guard WinampTheme.skinIsActive else { super.mouseDown(with: event); return }
         let point = convert(event.locationInWindow, from: nil)
         let titleBarMinY = bounds.height - 14
         guard point.y >= titleBarMinY else { super.mouseDown(with: event); return }

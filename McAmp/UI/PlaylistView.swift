@@ -101,7 +101,6 @@ class PlaylistView: NSView {
 
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
-        guard WinampTheme.skinIsActive else { return }
         drawSkinned()
     }
 
@@ -522,7 +521,6 @@ class PlaylistView: NSView {
 
     // MARK: - Mouse handling (skinned mode: dragging + bottom buttons)
     override func mouseDown(with event: NSEvent) {
-        guard WinampTheme.skinIsActive else { super.mouseDown(with: event); return }
         let point = convert(event.locationInWindow, from: nil)
 
         // Title bar drag zone (top 20px)
@@ -600,23 +598,20 @@ extension PlaylistView: NSTableViewDataSource, NSTableViewDelegate {
         guard row < tracks.count else { return nil }
         let track = tracks[row]
         let isPlaying = playlistManager?.currentTrack?.id == track.id
-        let skinned = WinampTheme.skinIsActive
 
         let rowH: CGFloat = tableView.rowHeight
         let cellW = tableColumn?.width ?? 200
         let cell = NSView(frame: NSRect(x: 0, y: 0, width: cellW, height: rowH))
         cell.autoresizesSubviews = true
 
-        let font: NSFont = skinned
-            ? (NSFont(name: WinampTheme.provider.playlistStyle.font, size: 8.5) ?? NSFont.systemFont(ofSize: 8.5))
-            : WinampTheme.playlistFont
+        let font: NSFont = (NSFont(name: WinampTheme.provider.playlistStyle.font, size: 8.5) ?? NSFont.systemFont(ofSize: 8.5))
         let textH = font.boundingRectForFont.height
         let yOffset = round((rowH - textH) / 2)
 
         let style = WinampTheme.provider.playlistStyle
-        let normalColor = skinned ? style.normal  : WinampTheme.greenBright
-        let currentColor = skinned ? style.current : WinampTheme.white
-        let secondaryColor = skinned ? style.normal : WinampTheme.greenSecondary
+        let normalColor = style.normal
+        let currentColor = style.current
+        let secondaryColor = style.normal
 
         // Number
         let numStr = "\(row + 1)."
@@ -749,17 +744,13 @@ class PlaylistTableView: NSTableView {
 class WinampRowView: NSTableRowView {
     override func drawSelection(in dirtyRect: NSRect) {
         guard isSelected else { return }
-        let color = WinampTheme.skinIsActive
-            ? WinampTheme.provider.playlistStyle.selectedBG
-            : WinampTheme.selectionBlue
+        let color = WinampTheme.provider.playlistStyle.selectedBG
         color.setFill()
         bounds.fill()
     }
 
     override func drawBackground(in dirtyRect: NSRect) {
-        let color = WinampTheme.skinIsActive
-            ? WinampTheme.provider.playlistStyle.normalBG
-            : NSColor.black
+        let color = WinampTheme.provider.playlistStyle.normalBG
         color.setFill()
         bounds.fill()
     }

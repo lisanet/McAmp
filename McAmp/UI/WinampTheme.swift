@@ -13,16 +13,10 @@ extension NSColor {
 
 final class WinampTheme {
     // MARK: - Skin facade
-    static var provider: SkinProvider = BuiltInSkin()
+    static var provider: SkinProvider!  // we always have a skin, either the default of the app bundle, or an already loaded one
 
     static func sprite(_ key: SpriteKey) -> NSImage? {
         provider.sprite(key)
-    }
-
-    /// True when a real skin is loaded. Views check this in `draw()` to branch
-    /// between drawSkinned and drawBuiltIn. See spec §7.1.
-    static var skinIsActive: Bool {
-        !(provider is BuiltInSkin)
     }
 
     // MARK: - Frame

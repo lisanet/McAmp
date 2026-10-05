@@ -81,7 +81,7 @@ class LCDDisplay: NSView {
         renderedTitle = nil
         renderedCycle = nil
         
-        if WinampTheme.skinIsActive, let sheet = textSheet, !text.isEmpty {
+        if let sheet = textSheet, !text.isEmpty {
             renderedTitle = renderSkinnedText(text, width: titleWidth, sheet: sheet)
             renderedCycle = renderSkinnedText(cycleText, width: cycleWidth, sheet: sheet)
         }

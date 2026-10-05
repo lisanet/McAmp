@@ -173,14 +173,6 @@ class EqualizerView: NSView {
     /// Hides freq/dB/PRE/dB-unit labels and the title bar when a skin is loaded.
     /// All these labels are baked into eqmain.bmp; the title bar is replaced by
     /// the eqmain title strip.
-//    private func applySkinVisibility() {
-//        let active = WinampTheme.skinIsActive
-//        titleBar.isHidden = active
-//        for label in bandLabels { label.isHidden = active }
-//        for label in dbLabels { label.isHidden = active }
-//        preLabel?.isHidden = active
-//        dbUnitLabel?.isHidden = active
-//    }
 
     private func compositeEqBackground() -> NSImage? {
         if let cached = WinampTheme.eqCompositeImage { return cached }
@@ -199,10 +191,6 @@ class EqualizerView: NSView {
     
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
-//        if !WinampTheme.skinIsActive {
-//            drawUnskinnedDecorations()
-//        }
-        guard WinampTheme.skinIsActive else { return }
         let ctx = NSGraphicsContext.current
         let prev = ctx?.imageInterpolation
         ctx?.imageInterpolation = .none
@@ -246,11 +234,6 @@ class EqualizerView: NSView {
     override func layout() {
         super.layout()
         layoutSkinned()
-//        if WinampTheme.skinIsActive {
-//            layoutSkinned()
-//        } else {
-//            layoutUnskinned()
-//        }
     }
 
     /// Exact Webamp EQ pixel coordinates. View bounds are 275x116 when skinned.
@@ -496,7 +479,6 @@ class EqualizerView: NSView {
 
     // MARK: - Window dragging (skinned mode)
     override func mouseDown(with event: NSEvent) {
-        guard WinampTheme.skinIsActive else { super.mouseDown(with: event); return }
         let point = convert(event.locationInWindow, from: nil)
         guard point.y >= bounds.height - 14 else { super.mouseDown(with: event); return }
         dragOrigin = event.locationInWindow
