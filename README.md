@@ -19,25 +19,26 @@ No Electron. No web views. Just Swift, AppKit, and nostalgia.
 ## ✨ Highlights
 
 - **Real Winamp skins** — load any classic `.wsz` skin and the entire app reskins: sprites, bitmap fonts, playlist colors, visualizer palette
-- **Support for Webradio stremas** - play webradio streams in playlists `.m3u`, `m3u8`, `.pls` from your favorite stations.
+- **Web radio support** — play your favorite stations from `.m3u`, `.m3u8`, and `.pls` playlists
 - **Gapless CUE playback** — one FLAC + `.cue` becomes individual tracks with sample-accurate, gapless transitions
 - **Jump to File** — incremental search over 10k-track playlists in under 16 ms
-
-
+ 
 
 ## 🎨 Skins
 
-McAmp parses the original Winamp 2.x skin format — a `.wsz` archive of bitmap
-sprites and INI files.
+McAmp parses the original Winamp 2.x skin format — a `.wsz` archive of bitmap sprites and INI files.
 
-A few classics to try live in [`skins/`](skins): *base-2.91*, *ExpensiveHi-Fi*.
+By default, locally installed skins are searched in `~/Documents/McAmp Skins`.
+
+Two classic skins are included in the DMG: *base-2.91* and *ExpensiveHi-Fi*. Simply copy them from [`skins/`](skins) to your skin directory.
 
 <div align="center">
 
-<img width="720" alt="The same player wearing the four bundled skins: base-2.91, Blue Plasma, OS8 AMP Aquamarine, Radar_Amp" src="docs/media/skins-grid.png" />
+<img width="720" alt="McAmp with different classic Winamp skins" src="docs/media/skins-grid.png" />
 
 </div>
 
+On first startup, McAmp loads the base skin from its app bundle.
 
 ## 📜 Playlist
 
@@ -48,9 +49,9 @@ A few classics to try live in [`skins/`](skins): *base-2.91*, *ExpensiveHi-Fi*.
   (via `ITLibrary`, with an `iTunes Music Library.xml` fallback); streaming-only and
   missing files are skipped and counted
 
-## Webradio streams
+## 📻 Web Radio Streams
 
-Play your favorite webradio stations from `m3u`, `m3u8` or `.pls`playlists.
+Play your favorite web radio stations from `.m3u`, `.m3u8`, or `.pls` playlists.
 
 ## 💿 CUE sheets, done properly
 
@@ -74,9 +75,9 @@ Vorbis comment) and the album splits into individual virtual tracks:
 | `⌘J` | Jump to File… | `⌘A` | Select All |
 
 
-## ⌨️ Hardware Media Keys
+## 🎛️ Hardware Media Keys
 
-Play/Pause, Next, Previous 
+Play/Pause, Next, Previous
 
 ## 📦 Supported formats
 
@@ -86,7 +87,7 @@ Play/Pause, Next, Previous
 
 ## 🚀 Getting started
 
-### Download
+### 📥 Download
 
 Grab the latest `McAmp-<version>-macOS-arm64.dmg` from
 [**Releases**](https://github.com/lisanet/macamp/releases), open it and drag
@@ -101,7 +102,7 @@ Terminal alternative:
 xattr -c /Applications/McAmp.app
 ```
 
-### Build from source
+### 🛠️ Build from Source
 
 **Requirements:** macOS 26.3+, Xcode 26+
 
@@ -118,20 +119,21 @@ open McAmp.xcodeproj
 
 ## 🙅 Non-goals
 
-McAmp is a player for your local files and for webradio streams. 
+McAmp is a player for local files and web radio streams.
 
-It will not stream Spotify or Apple Music catalog
-tracks — both route audio through a system-managed graph that bypasses our DSP,
+It will not stream tracks from the Spotify or Apple Music catalogs — both route
+audio through a system-managed graph that bypasses McAmp’s DSP,
 so the EQ and spectrum analyzer would be lying to you. Details in
 [docs/non-goals.md](docs/non-goals.md).
 
-## Credits
+## 🙏 Credits
 
-This project startet as a fork of (https://github.com/wishval/wamp)[https://github.com/wishval/wamp] but has been
-moved forward and included webradio strems, improved drawing of skin elements, reduced scaling artifacts, fixed various glitches, added some features, drop the unskinned mode more. So this project got renamed to `McAmp`
-to better reflect the many changes and improvements it has gone through.
+This project started as a fork of [Wamp](https://github.com/wishval/wamp), but has since
+evolved significantly. McAmp adds web radio streams, improves the rendering of skin elements,
+reduces scaling artifacts, fixes various glitches, adds new features, and drops the unskinned mode.
+The project was renamed to **McAmp** to better reflect the many changes and improvements it has undergone.
 
-Anyway, without the original project, McAmp would have never seen the light of day, so credits got to it.
+Without the original project, McAmp would never have seen the light of day, so credit goes to its creators.
 
 ## 📬 License
 
@@ -143,5 +145,5 @@ Contributions, bug reports, and feature requests are welcome. Please open an iss
 
 ## ⚠️ Disclaimer
 
-McAmp is provided 'as is' without any warranty.
+McAmp is provided “as is” without any warranty.
 Use at your own risk and ensure you have backups of your original media.
