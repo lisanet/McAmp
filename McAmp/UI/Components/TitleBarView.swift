@@ -30,15 +30,12 @@ class TitleBarView: NSView {
     }
 
     private func drawSkinned() {
-        let isActive = window?.isKeyWindow ?? true
         let ctx = NSGraphicsContext.current
         let prev = ctx?.imageInterpolation
         ctx?.imageInterpolation = .none
         defer { if let prev = prev { ctx?.imageInterpolation = prev } }
 
-        if let bg = WinampTheme.sprite(isActive ? .titleBarActive : .titleBarInactive) {
-            bg.draw(in: bounds)
-        }
+        // titlebar gets drawn in MainPlayerView.swift
         // Title text is baked into the sprite — do not draw the titleText overlay.
         if showButtons {
             let btnSize: CGFloat = 9
