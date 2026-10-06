@@ -55,15 +55,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
-
+        stateManager = StateManager()
+        let appState = stateManager.loadAppState()
+        
+        loadStartupSkin(appState)
+        
         audioEngine = AudioEngine()
         playlistManager = PlaylistManager()
-        stateManager = StateManager()
-
         playlistManager.setAudioEngine(audioEngine)
 
         // Restore state
-        let appState = stateManager.loadAppState()
         audioEngine.volume = appState.volume
         audioEngine.balance = appState.balance
         audioEngine.repeatMode = RepeatMode(rawValue: appState.repeatMode) ?? .off
@@ -85,8 +86,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         playlistManager.autoPlay = appState.autoPlay
         if playlistManager.autoPlay { playlistManager.autoPlayOnStartup = true } // clear playlist if autoplay
-        
-        loadStartupSkin(appState)
         
         // Create window
         mainWindow = MainWindow()
