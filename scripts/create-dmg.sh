@@ -12,7 +12,7 @@
 set -euo pipefail
 
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-APP_NAME="Wamp"
+APP_NAME="McAmp"
 
 VERSION="${1:?Usage: scripts/create-dmg.sh <version> [path/to/Wamp.app]}"
 APP="${2:-$PROJECT_DIR/.build/DerivedData/Build/Products/Release/$APP_NAME.app}"
@@ -31,12 +31,13 @@ ARCH="${ARCH:-arm64}"
 RELEASE_DIR="$PROJECT_DIR/release"
 DMG_PATH="$RELEASE_DIR/${APP_NAME}-${VERSION}-macOS-${ARCH}.dmg"
 
-STAGING="$(mktemp -d -t wamp-dmg)"
+STAGING="$(mktemp -d -t mcamp-dmg)"
 trap 'rm -rf "$STAGING"' EXIT
 
 echo "Staging $APP"
 cp -R "$APP" "$STAGING/"
 ln -s /Applications "$STAGING/Applications"
+cp -R "$PROJECT_DIR/skins" "$STAGING"
 
 mkdir -p "$RELEASE_DIR"
 rm -f "$DMG_PATH"
