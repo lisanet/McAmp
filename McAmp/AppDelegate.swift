@@ -96,13 +96,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         mainWindow.alwaysOnTop = appState.alwaysOnTop
         mainWindow.equalizerView.autoMode = eqState.autoMode
 
-        let windowOrigin = NSPoint(x: appState.windowX, y: appState.windowY)
-        mainWindow.setFrameOrigin(windowOrigin)
-
-        // Ensure window is on a visible screen; center if not
-        let isOnScreen = NSScreen.screens.contains { $0.visibleFrame.intersects(mainWindow.frame) }
-        if !isOnScreen {
-            mainWindow.center()
+        // Prefer the complete saved docking layout; fall back to legacy position.
+        let restoredDockLayout = appState.dockLayout.map {
+            mainWindow.restoreDockLayout($0)
+        } ?? false
+        if !restoredDockLayout {
+            mainWindow.setFrameOrigin( NSPoint(x: appState.windowX, y: appState.windowY))
+            if !NSScreen.screens.contains(where: { $0.visibleFrame.intersects(mainWindow.frame) }) {
+                mainWindow.center()
+            }
         }
 
         mainWindow.makeKeyAndOrderFront(nil)
@@ -139,7 +141,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             alwaysOnTop: mainWindow.alwaysOnTop,
             autoPlay: playlistManager.autoPlay,
             audioEngine: audioEngine,
-            playlistManager: playlistManager
+            playlistManager: playlistManager,
+            dockLayout: mainWindow.captureDockLayout()
         )
         stateManager.saveEQState(audioEngine: audioEngine, autoMode: mainWindow.equalizerView.autoMode)
         stateManager.savePlaylist(playlistManager: playlistManager)

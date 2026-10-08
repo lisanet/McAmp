@@ -64,18 +64,85 @@ final class WindowDockingController {
         }
     }
 
+    // Persist absolute screen positions and logical parent relationships.
+    func captureLayout() -> DockLayoutState {
+        func point(_ id: DockWindowID) -> DockPoint? {
+            guard let origin = windows[id]?.frame.origin else { return nil }
+            return DockPoint(x: Double(origin.x), y: Double(origin.y))
+        }
+        func name(_ id: DockWindowID?) -> String? {
+            switch id {
+            case .main: return "main"
+            case .equalizer: return "equalizer"
+            case .playlist: return "playlist"
+            case nil: return nil
+            }
+        }
+        return DockLayoutState(
+            main: point(.main),
+            equalizer: point(.equalizer),
+            playlist: point(.playlist),
+            equalizerParent: name(parent[.equalizer]),
+            playlistParent: name(parent[.playlist])
+        )
+    }
+
+    @discardableResult
+    func restoreLayout(_ state: DockLayoutState) -> Bool {
+        guard let main = state.main, let eq = state.equalizer,
+              let pl = state.playlist else { return false }
+
+        func identifier(_ name: String?) -> DockWindowID? {
+            switch name {
+            case "main": return .main
+            case "equalizer": return .equalizer
+            case "playlist": return .playlist
+            default: return nil
+            }
+        }
+        guard let eqParent = identifier(state.equalizerParent),
+              let playlistParent = identifier(state.playlistParent),
+              (eqParent == .main || eqParent == .playlist),
+              (playlistParent == .main || playlistParent == .equalizer),
+              !(eqParent == .playlist && playlistParent == .equalizer) else {
+            return false
+        }
+        guard let mainWindow = windows[.main],
+              let eqWindow = windows[.equalizer],
+              let plWindow = windows[.playlist] else { return false }
+
+        let positions: [(NSWindow, DockPoint)] = [(mainWindow, main), (eqWindow, eq), (plWindow, pl)]
+        
+        // Reject stale layouts when monitors were disconnected or rearranged.
+        guard positions.allSatisfy({ window, point in
+            let proposed = NSRect(origin: NSPoint(x: point.x, y: point.y), size: window.frame.size)
+            return NSScreen.screens.contains {
+                $0.visibleFrame.intersection(proposed).width >= proposed.width * 0.5 &&
+                $0.visibleFrame.intersection(proposed).height >= proposed.height * 0.5
+            }
+        }) else { return false }
+
+        movingGroupInternally = true
+        for (window, point) in positions {
+            window.setFrameOrigin(NSPoint(x: point.x, y: point.y))
+        }
+        lastMainOrigin = mainWindow.frame.origin
+        movingGroupInternally = false
+        parent[.equalizer] = eqParent
+        parent[.playlist] = playlistParent
+        return true
+    }
+
     // Initial docking, or explicit layout reset. Descendants follow their parent.
     func dock(_ child: DockWindowID, to target: DockWindowID) {
         guard child != .main, child != target,
               !descendants(of: child).contains(target),
               let childWindow = windows[child], let targetWindow = windows[target] else { return }
         let previous = childWindow.frame.origin
-        let newOrigin = NSPoint(x: targetWindow.frame.minX,
-                                y: targetWindow.frame.minY - childWindow.frame.height)
+        let newOrigin = NSPoint(x: targetWindow.frame.minX, y: targetWindow.frame.minY - childWindow.frame.height)
         parent[child] = target
         childWindow.setFrameOrigin(newOrigin)
-        moveDockedChildren(of: child, by: NSPoint(x: newOrigin.x - previous.x,
-                                                   y: newOrigin.y - previous.y))
+        moveDockedChildren(of: child, by: NSPoint(x: newOrigin.x - previous.x, y: newOrigin.y - previous.y))
     }
 
     func beginDragging(_ id: DockWindowID, mouseLocation: NSPoint) {
@@ -103,8 +170,7 @@ final class WindowDockingController {
 
     func updateDragging(mouseLocation: NSPoint) {
         guard let id = draggedID else { return }
-        let rawDelta = NSPoint(x: mouseLocation.x - dragStartMouse.x,
-                               y: mouseLocation.y - dragStartMouse.y)
+        let rawDelta = NSPoint(x: mouseLocation.x - dragStartMouse.x, y: mouseLocation.y - dragStartMouse.y)
 
         if id == .main {
             // Main moves normally; all docked windows follow visibly.
@@ -116,8 +182,7 @@ final class WindowDockingController {
         let delta = currentSnap?.delta ?? rawDelta
         for member in draggedGroup {
             guard let start = dragStartFrames[member] else { continue }
-            previews[member]?.setFrameOrigin(NSPoint(x: start.minX + delta.x,
-                                                      y: start.minY + delta.y))
+            previews[member]?.setFrameOrigin(NSPoint(x: start.minX + delta.x, y: start.minY + delta.y))
         }
     }
 
@@ -141,8 +206,7 @@ final class WindowDockingController {
     func moveDockedChildren(of id: DockWindowID, by delta: NSPoint) {
         for member in descendants(of: id) {
             guard let window = windows[member] else { continue }
-            window.setFrameOrigin(NSPoint(x: window.frame.minX + delta.x,
-                                          y: window.frame.minY + delta.y))
+            window.setFrameOrigin(NSPoint(x: window.frame.minX + delta.x, y: window.frame.minY + delta.y))
         }
     }
 
@@ -154,8 +218,7 @@ final class WindowDockingController {
         }
         for member in draggedGroup {
             guard let start = dragStartFrames[member], let window = windows[member] else { continue }
-            window.setFrameOrigin(NSPoint(x: start.minX + delta.x,
-                                          y: start.minY + delta.y))
+            window.setFrameOrigin(NSPoint(x: start.minX + delta.x, y: start.minY + delta.y))
         }
     }
 
@@ -188,10 +251,8 @@ final class WindowDockingController {
                 for origin in origins {
                     let distance = hypot(moving.minX - origin.x, moving.minY - origin.y)
                     guard distance <= snapDistance else { continue }
-                    let delta = NSPoint(x: rawDelta.x + origin.x - moving.minX,
-                                        y: rawDelta.y + origin.y - moving.minY)
-                    candidates.append(SnapCandidate(member: member, target: targetID,
-                                                     delta: delta, distance: distance))
+                    let delta = NSPoint(x: rawDelta.x + origin.x - moving.minX, y: rawDelta.y + origin.y - moving.minY)
+                    candidates.append(SnapCandidate(member: member, target: targetID, delta: delta, distance: distance))
                 }
             }
         }

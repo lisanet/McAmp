@@ -1,6 +1,20 @@
 import Foundation
 import Combine
 
+// Screen coordinates are stored in points, independently of skin scale.
+struct DockPoint: Codable {
+    var x: Double
+    var y: Double
+}
+
+struct DockLayoutState: Codable {
+    var main: DockPoint?
+    var equalizer: DockPoint?
+    var playlist: DockPoint?
+    var equalizerParent: String?
+    var playlistParent: String?
+}
+
 struct AppState: Codable {
     var volume: Float = 0.75
     var balance: Float = 0
@@ -15,6 +29,7 @@ struct AppState: Codable {
     var lastTrackIndex: Int = -1
     var lastPlaybackPosition: Double = 0
     var skinPath: String?
+    var dockLayout: DockLayoutState?
 }
 
 struct EQState: Codable {
@@ -96,10 +111,11 @@ class StateManager {
         write(trackData, to: "playlist.json")
     }
 
-    func saveWindowState(x: Double, y: Double, showEQ: Bool, showPlaylist: Bool, alwaysOnTop: Bool, autoPlay: Bool, audioEngine: AudioEngine, playlistManager: PlaylistManager) {
+    func saveWindowState(x: Double, y: Double, showEQ: Bool, showPlaylist: Bool, alwaysOnTop: Bool, autoPlay: Bool, audioEngine: AudioEngine, playlistManager: PlaylistManager, dockLayout: DockLayoutState? = nil) {
         var state = loadAppState()
         state.windowX = x
         state.windowY = y
+        state.dockLayout = dockLayout
         state.showEqualizer = showEQ
         state.showPlaylist = showPlaylist
         state.alwaysOnTop = alwaysOnTop

@@ -54,12 +54,6 @@ class MainWindow: NSWindow {
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { true }
 
-    override func makeKeyAndOrderFront(_ sender: Any?) {
-        super.makeKeyAndOrderFront(sender)
-        if showEqualizer { equalizerWindow.orderFront(nil) }
-        if showPlaylist { playlistWindow.orderFront(nil) }
-    }
-
     init() {
         let s = WinampTheme.scale
         let logicalWidth = WinampTheme.windowWidth
@@ -129,6 +123,15 @@ class MainWindow: NSWindow {
         // Initial classic Winamp stack: MAIN -> EQ -> PLAYLIST.
         dockingController.dock(.equalizer, to: .main)
         dockingController.dock(.playlist, to: .equalizer)
+    }
+
+    func captureDockLayout() -> DockLayoutState {
+        dockingController.captureLayout()
+    }
+
+    @discardableResult
+    func restoreDockLayout(_ layout: DockLayoutState) -> Bool {
+        dockingController.restoreLayout(layout)
     }
 
     private func install(view: NSView, in window: NSWindow, logicalHeight: CGFloat) {
