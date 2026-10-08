@@ -54,6 +54,12 @@ class MainWindow: NSWindow {
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { true }
 
+    override func makeKeyAndOrderFront(_ sender: Any?) {
+        super.makeKeyAndOrderFront(sender)
+        if showEqualizer { equalizerWindow.orderFront(nil) }
+        if showPlaylist { playlistWindow.orderFront(nil) }
+    }
+
     init() {
         let s = WinampTheme.scale
         let logicalWidth = WinampTheme.windowWidth
@@ -84,7 +90,15 @@ class MainWindow: NSWindow {
         equalizerWindow = makeAuxWindow(height: eqHeight)
         playlistWindow = makeAuxWindow(height: playlistHeight)
 
-        let mainRect = NSRect(x: 100, y: 100,
+        // Place the entire initial MAIN -> EQ -> PLAYLIST stack on screen.
+        // Starting MAIN at y=100 would put the docked panels off-screen.
+        let totalStackHeight = ((mainHeight + eqHeight + playlistHeight) * s).rounded()
+        let screen = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
+        let stackTop = screen.maxY - 40
+        let initialMainY = min(screen.maxY - (mainHeight * s).rounded(),
+                               max(screen.minY + totalStackHeight - (mainHeight * s).rounded(),
+                                   stackTop - (mainHeight * s).rounded()))
+        let mainRect = NSRect(x: screen.minX + 100, y: initialMainY,
                               width: scaledWidth,
                               height: (mainHeight * s).rounded())
         super.init(
@@ -246,17 +260,8 @@ class MainWindow: NSWindow {
         mainPlayerView.onTogglePL = { [weak self] in self?.showPlaylist.toggle() }
     }
 
-    /// Applies the non-rectangular window mask from the current skin's region.txt.
-    /// Called by AppDelegate after each skin load/unload.
-    ///
-    /// The mask is scoped to `mainPlayerView` because region.txt describes the
-    /// 275×116 main-player window only — EQ and playlist stay rectangular. We
-    /// also flip the window to non-opaque while a region is active, otherwise
-    /// the NSWindow background fills the cutout areas and the silhouette looks
-    /// pasted onto a solid rectangle instead of showing the desktop behind it.
     func applyRegionMaskFromCurrentSkin() {
         mainPlayerView.wantsLayer = true
-
         if let region = SkinManager.shared.currentSkin.mainWindowRegion {
             let mask = CAShapeLayer()
             mask.path = region.cgPath

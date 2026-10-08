@@ -1,9 +1,8 @@
 import Cocoa
 
+// One independent NSWindow per Winamp panel. Parent links form a tree rooted at MAIN.
 enum DockWindowID: CaseIterable, Hashable {
-    case main
-    case equalizer
-    case playlist
+    case main, equalizer, playlist
 }
 
 private final class DockPreviewView: NSView {
@@ -11,9 +10,9 @@ private final class DockPreviewView: NSView {
         NSColor.controlAccentColor.withAlphaComponent(0.16).setFill()
         bounds.fill()
         NSColor.controlAccentColor.setStroke()
-        let path = NSBezierPath(rect: bounds.insetBy(dx: 1.5, dy: 1.5))
-        path.lineWidth = 3
-        path.stroke()
+        let outline = NSBezierPath(rect: bounds.insetBy(dx: 1.5, dy: 1.5))
+        outline.lineWidth = 3
+        outline.stroke()
     }
 }
 
@@ -30,131 +29,173 @@ private final class DockPreviewWindow: NSWindow {
     }
 }
 
-/// Coordinates Winamp-style dragging and docking for the three independent windows.
-/// A dock relation means "child follows parent". Relations may form a chain, e.g.
-/// main -> equalizer -> playlist.
 final class WindowDockingController {
     private struct SnapCandidate {
+        let member: DockWindowID
         let target: DockWindowID
-        let origin: NSPoint
+        let delta: NSPoint
         let distance: CGFloat
     }
 
     private let snapDistance: CGFloat = 50
     private var windows: [DockWindowID: NSWindow] = [:]
     private var parent: [DockWindowID: DockWindowID] = [:]
-
     private var draggedID: DockWindowID?
     private var dragStartMouse: NSPoint = .zero
     private var dragStartFrames: [DockWindowID: NSRect] = [:]
-    private var draggedGroup: Set<DockWindowID> = []
-    private var previewWindow: DockPreviewWindow?
+    private var draggedGroup = Set<DockWindowID>()
+    private var previews: [DockWindowID: DockPreviewWindow] = [:]
     private var currentSnap: SnapCandidate?
+    private var mainMoveObserver: NSObjectProtocol?
+    private var lastMainOrigin: NSPoint = .zero
+    private var movingGroupInternally = false
+
+    deinit {
+        if let mainMoveObserver { NotificationCenter.default.removeObserver(mainMoveObserver) }
+    }
 
     func register(_ window: NSWindow, as id: DockWindowID) {
         windows[id] = window
+        if id == .main {
+            lastMainOrigin = window.frame.origin
+            mainMoveObserver = NotificationCenter.default.addObserver(
+                forName: NSWindow.didMoveNotification, object: window, queue: .main
+            ) { [weak self] _ in self?.mainWindowMoved() }
+        }
     }
 
+    // Initial docking, or explicit layout reset. Descendants follow their parent.
     func dock(_ child: DockWindowID, to target: DockWindowID) {
-        guard child != target, !descendants(of: child).contains(target) else { return }
+        guard child != .main, child != target,
+              !descendants(of: child).contains(target),
+              let childWindow = windows[child], let targetWindow = windows[target] else { return }
+        let previous = childWindow.frame.origin
+        let newOrigin = NSPoint(x: targetWindow.frame.minX,
+                                y: targetWindow.frame.minY - childWindow.frame.height)
         parent[child] = target
-        guard let childWindow = windows[child], let targetWindow = windows[target] else { return }
-        childWindow.setFrameOrigin(originDirectlyBelow(child: childWindow.frame, target: targetWindow.frame))
-    }
-
-    func undock(_ id: DockWindowID) {
-        parent[id] = nil
+        childWindow.setFrameOrigin(newOrigin)
+        moveDockedChildren(of: child, by: NSPoint(x: newOrigin.x - previous.x,
+                                                   y: newOrigin.y - previous.y))
     }
 
     func beginDragging(_ id: DockWindowID, mouseLocation: NSPoint) {
-        guard let window = windows[id] else { return }
+        guard draggedID == nil, windows[id] != nil else { return }
         draggedID = id
         dragStartMouse = mouseLocation
-
-        // Picking up a child detaches it from its old parent. Its own children remain attached.
-        parent[id] = nil
         draggedGroup = descendants(of: id).union([id])
-        dragStartFrames = Dictionary(uniqueKeysWithValues: draggedGroup.compactMap { child in
-            windows[child].map { (child, $0.frame) }
+        dragStartFrames = Dictionary(uniqueKeysWithValues: draggedGroup.compactMap { member in
+            windows[member].map { (member, $0.frame) }
         })
+        currentSnap = nil
 
-        let preview = DockPreviewWindow(frame: window.frame)
-        preview.orderFront(nil)
-        previewWindow = preview
-        window.alphaValue = 0.82
+        // Main player drags the REAL windows, live. No outline.
+        if id == .main { return }
+
+        // A dragged EQ+playlist group needs an outline for BOTH windows.
+        for member in draggedGroup {
+            guard let frame = dragStartFrames[member] else { continue }
+            let preview = DockPreviewWindow(frame: frame)
+            preview.level = windows[member]?.level ?? .normal
+            preview.orderFront(nil)
+            previews[member] = preview
+        }
     }
 
     func updateDragging(mouseLocation: NSPoint) {
-        guard let id = draggedID, let start = dragStartFrames[id] else { return }
-        let delta = NSPoint(x: mouseLocation.x - dragStartMouse.x,
-                            y: mouseLocation.y - dragStartMouse.y)
-        let proposed = NSRect(x: start.origin.x + delta.x,
-                              y: start.origin.y + delta.y,
-                              width: start.width,
-                              height: start.height)
+        guard let id = draggedID else { return }
+        let rawDelta = NSPoint(x: mouseLocation.x - dragStartMouse.x,
+                               y: mouseLocation.y - dragStartMouse.y)
 
-        currentSnap = bestSnap(for: id, proposedFrame: proposed)
-        let previewOrigin = currentSnap?.origin ?? proposed.origin
-        previewWindow?.setFrameOrigin(previewOrigin)
+        if id == .main {
+            // Main moves normally; all docked windows follow visibly.
+            applyDelta(rawDelta)
+            return
+        }
+
+        currentSnap = bestSnap(rawDelta: rawDelta)
+        let delta = currentSnap?.delta ?? rawDelta
+        for member in draggedGroup {
+            guard let start = dragStartFrames[member] else { continue }
+            previews[member]?.setFrameOrigin(NSPoint(x: start.minX + delta.x,
+                                                      y: start.minY + delta.y))
+        }
     }
 
     func endDragging(mouseLocation: NSPoint) {
-        guard let id = draggedID, let start = dragStartFrames[id] else { cleanupDrag(); return }
+        guard let id = draggedID else { return }
         updateDragging(mouseLocation: mouseLocation)
+        if id == .main {
+            cleanupDrag()
+            return
+        }
 
-        let delta: NSPoint
         if let snap = currentSnap {
-            delta = NSPoint(x: snap.origin.x - start.origin.x, y: snap.origin.y - start.origin.y)
-            parent[id] = snap.target
-        } else {
-            delta = NSPoint(x: mouseLocation.x - dragStartMouse.x,
-                            y: mouseLocation.y - dragStartMouse.y)
+            // Only commit a new parent after a valid snap. No free floating panels.
+            parent[snap.member] = snap.target
+            applyDelta(snap.delta)
         }
-
-        // Move the selected window and every window docked below it by the same delta.
-        for member in draggedGroup {
-            guard let initial = dragStartFrames[member], let window = windows[member] else { continue }
-            window.setFrameOrigin(NSPoint(x: initial.origin.x + delta.x,
-                                          y: initial.origin.y + delta.y))
-        }
+        // No candidate: original frames and parent links remain untouched.
         cleanupDrag()
     }
 
     func moveDockedChildren(of id: DockWindowID, by delta: NSPoint) {
-        for child in descendants(of: id) {
-            guard let window = windows[child] else { continue }
-            window.setFrameOrigin(NSPoint(x: window.frame.origin.x + delta.x,
-                                          y: window.frame.origin.y + delta.y))
+        for member in descendants(of: id) {
+            guard let window = windows[member] else { continue }
+            window.setFrameOrigin(NSPoint(x: window.frame.minX + delta.x,
+                                          y: window.frame.minY + delta.y))
         }
     }
 
-    private func bestSnap(for movingID: DockWindowID, proposedFrame: NSRect) -> SnapCandidate? {
+    private func applyDelta(_ delta: NSPoint) {
+        movingGroupInternally = true
+        defer {
+            movingGroupInternally = false
+            if let main = windows[.main] { lastMainOrigin = main.frame.origin }
+        }
+        for member in draggedGroup {
+            guard let start = dragStartFrames[member], let window = windows[member] else { continue }
+            window.setFrameOrigin(NSPoint(x: start.minX + delta.x,
+                                          y: start.minY + delta.y))
+        }
+    }
+
+    // Also handle AppDelegate / macOS moving the main window after initialization.
+    private func mainWindowMoved() {
+        guard !movingGroupInternally, let main = windows[.main] else { return }
+        let now = main.frame.origin
+        let delta = NSPoint(x: now.x - lastMainOrigin.x, y: now.y - lastMainOrigin.y)
+        lastMainOrigin = now
+        if delta.x != 0 || delta.y != 0 { moveDockedChildren(of: .main, by: delta) }
+    }
+
+    private func bestSnap(rawDelta: NSPoint) -> SnapCandidate? {
         var candidates: [SnapCandidate] = []
-        for targetID in DockWindowID.allCases where targetID != movingID && !draggedGroup.contains(targetID) {
-            guard let targetWindow = windows[targetID], targetWindow.isVisible else { continue }
-            let target = targetWindow.frame
-
-            // Primary Winamp arrangement: moving window immediately below target,
-            // with exactly the same left edge.
-            let below = originDirectlyBelow(child: proposedFrame, target: target)
-            let belowDistance = hypot(proposedFrame.minX - below.x, proposedFrame.maxY - target.minY)
-            if belowDistance <= snapDistance {
-                candidates.append(SnapCandidate(target: targetID, origin: below, distance: belowDistance))
-            }
-
-            // Also allow docking immediately above another window. The moved window's
-            // left edge is still aligned exactly to the target's left edge.
-            let above = NSPoint(x: target.minX, y: target.maxY)
-            let aboveDistance = hypot(proposedFrame.minX - above.x, proposedFrame.minY - target.maxY)
-            if aboveDistance <= snapDistance {
-                candidates.append(SnapCandidate(target: targetID, origin: above, distance: aboveDistance))
+        // Any panel in the dragged group may touch an external window.
+        for member in draggedGroup where member == draggedID {
+            guard let start = dragStartFrames[member] else { continue }
+            let moving = start.offsetBy(dx: rawDelta.x, dy: rawDelta.y)
+            for targetID in DockWindowID.allCases where !draggedGroup.contains(targetID) {
+                guard let targetWindow = windows[targetID], targetWindow.isVisible else { continue }
+                let target = targetWindow.frame
+                let origins = [
+                    // Below and above: left edges coincide.
+                    NSPoint(x: target.minX, y: target.minY - moving.height),
+                    NSPoint(x: target.minX, y: target.maxY),
+                    // Right and left: TOP edges coincide.
+                    NSPoint(x: target.maxX, y: target.maxY - moving.height),
+                    NSPoint(x: target.minX - moving.width, y: target.maxY - moving.height)
+                ]
+                for origin in origins {
+                    let distance = hypot(moving.minX - origin.x, moving.minY - origin.y)
+                    guard distance <= snapDistance else { continue }
+                    let delta = NSPoint(x: rawDelta.x + origin.x - moving.minX,
+                                        y: rawDelta.y + origin.y - moving.minY)
+                    candidates.append(SnapCandidate(member: member, target: targetID,
+                                                     delta: delta, distance: distance))
+                }
             }
         }
         return candidates.min { $0.distance < $1.distance }
-    }
-
-    private func originDirectlyBelow(child: NSRect, target: NSRect) -> NSPoint {
-        NSPoint(x: target.minX, y: target.minY - child.height)
     }
 
     private func descendants(of id: DockWindowID) -> Set<DockWindowID> {
@@ -171,12 +212,11 @@ final class WindowDockingController {
     }
 
     private func cleanupDrag() {
-        if let id = draggedID { windows[id]?.alphaValue = 1.0 }
-        previewWindow?.orderOut(nil)
-        previewWindow = nil
-        currentSnap = nil
+        for preview in previews.values { preview.orderOut(nil) }
+        previews.removeAll()
         draggedID = nil
         draggedGroup.removeAll()
         dragStartFrames.removeAll()
+        currentSnap = nil
     }
 }
