@@ -496,10 +496,14 @@ class MainPlayerView: NSView {
         timeDisplay.timeInSeconds = TimeInterval(hour * 60 + minute)
     }
 
-    // MARK: - Window dragging (skinned mode)
+    // MARK: - Mouse / Window dragging (skinned mode)
     // When skinned, TitleBarView is hidden so we handle dragging from the title
     // bar area (top 14px of the 116px skin) directly in MainPlayerView.
 
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+        return true
+    }
+    
     override func mouseDown(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
         let titleBarMinY = bounds.height - 14

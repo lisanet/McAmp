@@ -525,6 +525,10 @@ class PlaylistView: NSView {
     private func skinnedMiniEjectRect() -> NSRect { NSRect(x: bounds.width -  97, y: 6, width: 10, height: 10) }
 
     // MARK: - Mouse handling (skinned mode: dragging + bottom buttons)
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+        return true
+    }
+    
     override func mouseDown(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
 

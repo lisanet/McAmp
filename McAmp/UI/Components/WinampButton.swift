@@ -52,6 +52,10 @@ class WinampButton: NSView {
         }
     }
 
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+        true
+    }
+    
     override func mouseDown(with event: NSEvent) {
         isPressed = true
     }

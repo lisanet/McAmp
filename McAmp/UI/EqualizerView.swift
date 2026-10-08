@@ -353,7 +353,11 @@ class EqualizerView: NSView {
         responseView.bands = preset.bands
     }
 
-    // MARK: - Window dragging (skinned mode)
+    // MARK: - Mouse / Window dragging (skinned mode)
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+        return true
+    }
+    
     override func mouseDown(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
         guard point.y >= bounds.height - 14 else { super.mouseDown(with: event); return }
