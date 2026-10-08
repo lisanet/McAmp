@@ -43,6 +43,9 @@ class EqualizerView: NSView {
     private var skinObserver: AnyCancellable?
     private weak var audioEngine: AudioEngine?
     private var dragOrigin: NSPoint?
+    var onTitleBarDragBegan: ((NSPoint) -> Void)?
+    var onTitleBarDragChanged: ((NSPoint) -> Void)?
+    var onTitleBarDragEnded: ((NSPoint) -> Void)?
 
     var autoMode: Bool {
         get { autoButton.isActive }
@@ -355,18 +358,16 @@ class EqualizerView: NSView {
         let point = convert(event.locationInWindow, from: nil)
         guard point.y >= bounds.height - 14 else { super.mouseDown(with: event); return }
         dragOrigin = event.locationInWindow
+        onTitleBarDragBegan?(NSEvent.mouseLocation)
     }
 
     override func mouseDragged(with event: NSEvent) {
-        guard let origin = dragOrigin, let win = window else { return }
-        let current = event.locationInWindow
-        var frame = win.frame
-        frame.origin.x += current.x - origin.x
-        frame.origin.y += current.y - origin.y
-        win.setFrameOrigin(frame.origin)
+        guard dragOrigin != nil else { return }
+        onTitleBarDragChanged?(NSEvent.mouseLocation)
     }
 
     override func mouseUp(with event: NSEvent) {
+        if dragOrigin != nil { onTitleBarDragEnded?(NSEvent.mouseLocation) }
         dragOrigin = nil
         super.mouseUp(with: event)
     }

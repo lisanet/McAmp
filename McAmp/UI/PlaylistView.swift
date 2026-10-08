@@ -25,6 +25,11 @@ class PlaylistView: NSView {
     var onMiniNext:  (() -> Void)?
     var onMiniEject: (() -> Void)?
 
+    var onTitleBarDragBegan: ((NSPoint) -> Void)?
+    var onTitleBarDragChanged: ((NSPoint) -> Void)?
+    var onTitleBarDragEnded: ((NSPoint) -> Void)?
+    private var dockingDragActive = false
+    
     override init(frame: NSRect) {
         super.init(frame: frame)
         wantsLayer = true
@@ -526,6 +531,9 @@ class PlaylistView: NSView {
         // Title bar drag zone (top 20px)
         if point.y >= bounds.height - 20 {
             dragOrigin = event.locationInWindow
+
+            // Start docking drag
+            onTitleBarDragBegan?(NSEvent.mouseLocation)
             return
         }
 
@@ -549,19 +557,23 @@ class PlaylistView: NSView {
     }
 
     override func mouseDragged(with event: NSEvent) {
-        guard let origin = dragOrigin, let win = window else {
+        guard dragOrigin != nil else {
             super.mouseDragged(with: event)
             return
         }
-        let current = event.locationInWindow
-        var frame = win.frame
-        frame.origin.x += current.x - origin.x
-        frame.origin.y += current.y - origin.y
-        win.setFrameOrigin(frame.origin)
+
+        // Move docking preview instead of the actual window
+        onTitleBarDragChanged?(NSEvent.mouseLocation)
     }
 
     override func mouseUp(with event: NSEvent) {
-        dragOrigin = nil
+        if dragOrigin != nil {
+            // Finish docking operation
+            onTitleBarDragEnded?(NSEvent.mouseLocation)
+            dragOrigin = nil
+            return
+        }
+
         super.mouseUp(with: event)
     }
 

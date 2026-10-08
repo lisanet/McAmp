@@ -53,6 +53,9 @@ class MainPlayerView: NSView {
 
     // Window dragging state for skinned mode (titleBar is hidden)
     private var dragOrigin: NSPoint?
+    var onTitleBarDragBegan: ((NSPoint) -> Void)?
+    var onTitleBarDragChanged: ((NSPoint) -> Void)?
+    var onTitleBarDragEnded: ((NSPoint) -> Void)?
 
     /// View height in logical (pre-scale) points. Winamp's main.bmp is exactly
     /// 116 px tall, so when a skin is active we shrink the view to match and
@@ -508,18 +511,22 @@ class MainPlayerView: NSView {
             return
         }
         dragOrigin = event.locationInWindow
+        onTitleBarDragBegan?(NSEvent.mouseLocation)
     }
 
     override func mouseDragged(with event: NSEvent) {
-        guard let origin = dragOrigin, let win = window else { return }
-        let current = event.locationInWindow
-        var frame = win.frame
-        frame.origin.x += current.x - origin.x
-        frame.origin.y += current.y - origin.y
-        win.setFrameOrigin(frame.origin)
+        guard dragOrigin != nil else { return }
+        if let onTitleBarDragChanged {
+            onTitleBarDragChanged(NSEvent.mouseLocation)
+        } else if let win = window {
+            // Fallback for use outside MainWindow/DockingController.
+            win.setFrameOrigin(NSPoint(x: NSEvent.mouseLocation.x - (dragOrigin?.x ?? 0),
+                                       y: NSEvent.mouseLocation.y - (dragOrigin?.y ?? 0)))
+        }
     }
 
     override func mouseUp(with event: NSEvent) {
+        if dragOrigin != nil { onTitleBarDragEnded?(NSEvent.mouseLocation) }
         dragOrigin = nil
         super.mouseUp(with: event)
     }
