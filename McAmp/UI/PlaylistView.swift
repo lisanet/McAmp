@@ -146,6 +146,7 @@ class PlaylistView: NSView {
             let lt = WinampTheme.sprite(.playlistLeftTile),
             let rt = WinampTheme.sprite(.playlistRightTile),
             let bl = WinampTheme.sprite(.playlistBottomLeftCorner),
+            let bt = WinampTheme.sprite(.playlistBottomTile),
             let br = WinampTheme.sprite(.playlistBottomRightCorner) else { return nil }
         
 
@@ -172,6 +173,11 @@ class PlaylistView: NSView {
         }
         // bottom row
         tileDraw(bl, x: 0, y: 0)
+        x = 125
+        while x < w - 150 {
+            tileDraw(bt, x: x, y: 0)
+            x += 25
+        }
         tileDraw(br, x: w - 150, y: 0)
         
         result.unlockFocus()
