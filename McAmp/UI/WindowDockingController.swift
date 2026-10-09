@@ -64,6 +64,49 @@ final class WindowDockingController {
         }
     }
 
+    // A scale change is not a playlist resize: keep the docking topology and
+    // rebuild child origins from their former attachment edges.
+    func windowFrames() -> [DockWindowID: NSRect] {
+        Dictionary(uniqueKeysWithValues: windows.map { ($0.key, $0.value.frame) })
+    }
+
+    func repositionAfterScale(from old: [DockWindowID: NSRect], ratio: CGFloat) {
+        guard ratio > 0 else { return }
+        movingGroupInternally = true
+        defer {
+            lastMainOrigin = windows[.main]?.frame.origin ?? lastMainOrigin
+            movingGroupInternally = false
+        }
+
+        var positioned: Set<DockWindowID> = [.main]
+        // Parent-first order, including MAIN -> PLAYLIST -> EQ.
+        for _ in 0..<2 {
+            for child in [DockWindowID.equalizer, .playlist] where !positioned.contains(child) {
+                guard let p = parent[child], positioned.contains(p),
+                      let oldParent = old[p], let oldChild = old[child],
+                      let newParent = windows[p]?.frame,
+                      let childWindow = windows[child] else { continue }
+                let newChild = childWindow.frame
+                let tolerance: CGFloat = 2
+                let left = abs(oldChild.maxX - oldParent.minX) <= tolerance
+                let right = abs(oldChild.minX - oldParent.maxX) <= tolerance
+                let below = abs(oldChild.maxY - oldParent.minY) <= tolerance
+                let above = abs(oldChild.minY - oldParent.maxY) <= tolerance
+
+                // Scale relative offsets when panels are not precisely touching;
+                // snap exact former edges to exact new edges to avoid rounding gaps.
+                var x = newParent.minX + (oldChild.minX - oldParent.minX) * ratio
+                var top = newParent.maxY + (oldChild.maxY - oldParent.maxY) * ratio
+                if left { x = newParent.minX - newChild.width }
+                if right { x = newParent.maxX }
+                if below { top = newParent.minY }
+                if above { top = newParent.maxY + newChild.height }
+                childWindow.setFrameOrigin(NSPoint(x: x, y: top - newChild.height))
+                positioned.insert(child)
+            }
+        }
+    }
+
     // Persist absolute screen positions and logical parent relationships.
     func captureLayout() -> DockLayoutState {
         func point(_ id: DockWindowID) -> DockPoint? {

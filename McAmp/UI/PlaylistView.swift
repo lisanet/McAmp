@@ -15,6 +15,24 @@ class PlaylistView: NSView {
     private weak var playlistManager: PlaylistManager?
     private var lastColumnWidth: CGFloat = 0
     private var dragOrigin: NSPoint?
+    var onResizeBegan: (() -> (Int, Int, CGFloat))?
+    var onResizeChanged: ((Int, Int) -> Void)?
+    private var resizeStart: (mouse: NSPoint, width: Int, height: Int, scale: CGFloat)?
+    private var backgroundComposite: NSImage?
+    private var compositeSize: NSSize = .zero
+    private var compositeActive = true
+    private var logicalWidth: Int = 275
+    private var logicalHeight: Int = 232
+    func updateLogicalSize(width: Int, height: Int) {
+        logicalWidth = width
+        logicalHeight = height
+        backgroundComposite = nil
+        needsLayout = true
+        needsDisplay = true
+    }
+    private var resizeHandleRect: NSRect {
+        NSRect(x: CGFloat(logicalWidth - 16), y: 6, width: 10, height: 10)
+    }
 
     // Set by MainWindow.bindToModels / AppDelegate. Baked into pledit.bmp's
     // BR corner; mirrors classic Winamp's playlist-local transport row.
@@ -92,6 +110,7 @@ class PlaylistView: NSView {
         skinObserver = SkinManager.shared.$currentSkin
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
+                self?.backgroundComposite = nil
                 self?.applySkinVisibility()
                 self?.needsDisplay = true
             }
@@ -114,8 +133,10 @@ class PlaylistView: NSView {
             tile.draw(at: NSPoint(x: x, y: y), from: .zero, operation: .sourceOver, fraction: 1)
         }
         
-        if let cached = WinampTheme.plvCompositeImage { return cached }
+        
         let isActive = window?.isKeyWindow ?? true
+        let requestedSize = NSSize(width: CGFloat(logicalWidth), height: CGFloat(logicalHeight))
+        if let backgroundComposite, compositeSize == requestedSize, compositeActive == isActive { return backgroundComposite }
         
         guard
             let tl = WinampTheme.sprite(.playlistTopLeftCorner(active: isActive)),
@@ -128,8 +149,8 @@ class PlaylistView: NSView {
             let br = WinampTheme.sprite(.playlistBottomRightCorner) else { return nil }
         
 
-        let w = WinampTheme.windowWidth
-        let h = WinampTheme.playlistMinHeight
+        let w = CGFloat(logicalWidth)
+        let h = CGFloat(logicalHeight)
         let result = NSImage(size: NSSize(width: w, height: h))
         result.lockFocus()
         
@@ -154,7 +175,9 @@ class PlaylistView: NSView {
         tileDraw(br, x: w - 150, y: 0)
         
         result.unlockFocus()
-        WinampTheme.plvCompositeImage = result
+        backgroundComposite = result
+        compositeSize = requestedSize
+        compositeActive = isActive
         return result
     }
     
@@ -206,8 +229,8 @@ class PlaylistView: NSView {
     /// corner strip (ADD/REM baked in), 12px left tile, 20px right tile.
     /// The track list fills the middle.
     private func layoutSkinned() {
-        let w = bounds.width
-        let h = bounds.height
+        let w = CGFloat(logicalWidth)
+        let h = CGFloat(logicalHeight)
         let topH: CGFloat = 20
         let bottomH: CGFloat = 38
         let leftW: CGFloat = 12
@@ -238,7 +261,8 @@ class PlaylistView: NSView {
         let trackTop = h - topH
         let trackBottom = bottomH
         let trackH = max(0, trackTop - trackBottom)
-        skinScroller.frame = NSRect(x: 0, y: trackBottom, width: WinampTheme.windowWidth, height: trackH)
+        skinScroller.frame = NSRect(x: 0, y: trackBottom, width: w, height: trackH)
+        skinScroller.logicalWidth = logicalWidth
     }
 
     func bindToModel(playlistManager: PlaylistManager) {
@@ -532,6 +556,12 @@ class PlaylistView: NSView {
     override func mouseDown(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
 
+        if resizeHandleRect.contains(point), let begin = onResizeBegan {
+            let initial = begin()
+            resizeStart = (NSEvent.mouseLocation, initial.0, initial.1, initial.2)
+            return
+        }
+
         // Title bar drag zone (top 20px)
         if point.y >= bounds.height - 20 {
             dragOrigin = event.locationInWindow
@@ -561,6 +591,15 @@ class PlaylistView: NSView {
     }
 
     override func mouseDragged(with event: NSEvent) {
+        if let start = resizeStart {
+            let now = NSEvent.mouseLocation
+            let dx = (now.x - start.mouse.x) / start.scale
+            let dy = (start.mouse.y - now.y) / start.scale
+            let columns = max(0, Int((CGFloat(start.width - 275) + dx + 12.5) / 25))
+            let rows = max(0, Int((CGFloat(start.height - 232) + dy + 14.5) / 29))
+            onResizeChanged?(275 + columns * 25, 232 + rows * 29)
+            return
+        }
         guard dragOrigin != nil else {
             super.mouseDragged(with: event)
             return
@@ -571,6 +610,10 @@ class PlaylistView: NSView {
     }
 
     override func mouseUp(with event: NSEvent) {
+        if resizeStart != nil {
+            resizeStart = nil
+            return
+        }
         if dragOrigin != nil {
             // Finish docking operation
             onTitleBarDragEnded?(NSEvent.mouseLocation)

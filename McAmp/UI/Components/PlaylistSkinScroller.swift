@@ -9,6 +9,12 @@ final class PlaylistSkinScroller: NSView {
     private static let handleW: CGFloat = 8
     private static let handleH: CGFloat = 18
 
+    var logicalWidth: Int = 275 {
+        didSet { if oldValue != logicalWidth { needsDisplay = true } }
+    }
+    private var compositeImage: NSImage?
+    private var compositeWidth: Int = 0
+    private var compositePressed = false
     weak var scrollView: NSScrollView?
     private var pressed = false
     private var dragOffsetWithinHandle: CGFloat = 0
@@ -20,6 +26,7 @@ final class PlaylistSkinScroller: NSView {
         skinObserver = SkinManager.shared.$currentSkin
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
+                self?.compositeImage = nil
                 self?.needsDisplay = true
             }
     }
@@ -66,10 +73,10 @@ final class PlaylistSkinScroller: NSView {
     }
     
     private func compositeScroller() -> NSImage? {
-        if let cached = WinampTheme.scrollerCompositeImage { return cached }
+        if let compositeImage, compositeWidth == logicalWidth, compositePressed == pressed { return compositeImage }
         guard let scroller = WinampTheme.sprite(.playlistScrollHandle(pressed: pressed)) else { return nil }
         
-        let w = WinampTheme.windowWidth
+        let w = CGFloat(logicalWidth)
         // transparent image over width of window, so scaling later has no artefacts in horizontal positions
         let result = NSImage(size: NSSize(width: w, height: Self.handleH))
         result.lockFocus()
@@ -77,7 +84,9 @@ final class PlaylistSkinScroller: NSView {
         scroller.draw(at: NSPoint(x: w - 15, y: 0), from: .zero, operation: .sourceOver, fraction: 1)
         
         result.unlockFocus()
-        WinampTheme.scrollerCompositeImage = result
+        compositeImage = result
+        compositeWidth = logicalWidth
+        compositePressed = pressed
         return result
     }
 
@@ -112,7 +121,7 @@ final class PlaylistSkinScroller: NSView {
     override func mouseDown(with event: NSEvent) {
         guard let _ = scrollView, let handleY = currentHandleY() else { return }
         let p = convert(event.locationInWindow, from: nil)
-        let handleRect = NSRect(x: 0, y: handleY, width: Self.handleW, height: Self.handleH)
+        let handleRect = NSRect(x: bounds.width - 15, y: handleY, width: Self.handleW, height: Self.handleH)
         if handleRect.contains(p) {
             dragOffsetWithinHandle = p.y - handleY
         } else {

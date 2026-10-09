@@ -13,6 +13,8 @@ struct DockLayoutState: Codable {
     var playlist: DockPoint?
     var equalizerParent: String?
     var playlistParent: String?
+    var playlistLogicalWidth: Int?
+    var playlistLogicalHeight: Int?
 }
 
 struct AppState: Codable {
