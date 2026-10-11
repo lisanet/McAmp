@@ -31,7 +31,7 @@ class MainWindow: NSWindow {
                           height: (CGFloat(playlistLogicalHeight) * scale).rounded())
         let origin = NSPoint(x: old.minX, y: keepingTopLeft ? old.maxY - size.height : old.minY)
         playlistWindow.setFrame(NSRect(origin: origin, size: size), display: true)
-        if let container = playlistContainer {
+        if let container = playlistWindow.contentView {
             container.frame = NSRect(origin: .zero, size: size)
             container.setBoundsSize(NSSize(width: CGFloat(playlistLogicalWidth), height: CGFloat(playlistLogicalHeight)))
             playlistView.frame = container.bounds
@@ -42,11 +42,9 @@ class MainWindow: NSWindow {
     }
 
     func setPlaylistLogicalSize(width: Int, height: Int) {
-        let w = 275 + max(0, (width - 275) / 25) * 25
-        let h = 232 + max(0, (height - 232) / 29) * 29
-        guard w != playlistLogicalWidth || h != playlistLogicalHeight else { return }
-        playlistLogicalWidth = w
-        playlistLogicalHeight = h
+        guard width != playlistLogicalWidth || height != playlistLogicalHeight else { return }
+        playlistLogicalWidth = width
+        playlistLogicalHeight = height
         applyPlaylistGeometry(keepingTopLeft: true)
     }
 
@@ -55,8 +53,8 @@ class MainWindow: NSWindow {
         let previousScale = appliedWindowScale
         let scale = WinampTheme.scale
         for (window, view, width, height) in [
-            (self as NSWindow, mainPlayerView as NSView, CGFloat(275), mainPlayerView.desiredHeight),
-            (equalizerWindow as NSWindow, equalizerView as NSView, CGFloat(275), equalizerView.desiredHeight)
+            (self as NSWindow, mainPlayerView as NSView, WinampTheme.windowWidth, WinampTheme.mainPlayerHeight),
+            (equalizerWindow as NSWindow, equalizerView as NSView, WinampTheme.windowWidth, WinampTheme.equalizerHeight)
         ] {
             let old = window.frame
             let size = NSSize(width: (width * scale).rounded(), height: (height * scale).rounded())
@@ -110,8 +108,8 @@ class MainWindow: NSWindow {
     init() {
         let s = WinampTheme.scale
         let logicalWidth = WinampTheme.windowWidth
-        let mainHeight = mainPlayerView.desiredHeight
-        let eqHeight = equalizerView.desiredHeight
+        let mainHeight = WinampTheme.mainPlayerHeight
+        let eqHeight = WinampTheme.equalizerHeight
         let playlistHeight = WinampTheme.playlistMinHeight
         let scaledWidth = (logicalWidth * s).rounded()
 
@@ -166,7 +164,6 @@ class MainWindow: NSWindow {
         install(view: mainPlayerView, in: self, logicalHeight: mainHeight)
         install(view: equalizerView, in: equalizerWindow, logicalHeight: eqHeight)
         install(view: playlistView, in: playlistWindow, logicalHeight: playlistHeight)
-        playlistContainer = playlistWindow.contentView
 
         dockingController.register(self, as: .main)
         dockingController.register(equalizerWindow, as: .equalizer)
