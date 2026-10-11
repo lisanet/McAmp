@@ -559,7 +559,6 @@ class PlaylistView: NSView {
         let point = convert(event.locationInWindow, from: nil)
 
         if resizeHandleRect.contains(point), let begin = onResizeBegan {
-            debugLog("logicalW: \(logicalWidth)")
             let initial = begin()
             resizeStart = (NSEvent.mouseLocation, initial.0, initial.1, initial.2)
             return
