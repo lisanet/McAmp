@@ -43,6 +43,7 @@ class MainPlayerView: NSView {
 
     // Invisible click hit-zones for close/minimize/menu when skinned (replace hidden titleBar)
     private let closeHitZone = HitZone()
+    private let maximizeHitZone = HitZone()
     private let minimizeHitZone = HitZone()
     private let menuHitZone = HitZone()
     // Click target over the Nullsoft logo baked into main.bmp, right of the repeat button.
@@ -150,11 +151,14 @@ class MainPlayerView: NSView {
         // then, so we need invisible NSViews at the locations where main.bmp paints
         // these buttons so the user can still interact with them).
         addSubview(closeHitZone)
+        addSubview(maximizeHitZone)
         addSubview(minimizeHitZone)
         addSubview(menuHitZone)
         addSubview(githubHitZone)
         let closeClick = NSClickGestureRecognizer(target: self, action: #selector(handleSkinnedClose))
         closeHitZone.addGestureRecognizer(closeClick)
+        let maximizeClick = NSClickGestureRecognizer(target: self, action: #selector(handleSkinnedMaximize))
+        maximizeHitZone.addGestureRecognizer(maximizeClick)
         let minimizeClick = NSClickGestureRecognizer(target: self, action: #selector(handleSkinnedMinimize))
         minimizeHitZone.addGestureRecognizer(minimizeClick)
         let menuClick = NSClickGestureRecognizer(target: self, action: #selector(handleSkinnedMenu))
@@ -164,6 +168,7 @@ class MainPlayerView: NSView {
     }
 
     @objc private func handleSkinnedClose() { NSApp.terminate(nil) }
+    @objc private func handleSkinnedMaximize() { doubleSize() }
     @objc private func handleSkinnedMinimize() { window?.miniaturize(nil) }
     @objc private func handleSkinnedMenu() { showWindowMenu() }
     @objc private func handleOpenGitHub() {
@@ -258,6 +263,7 @@ class MainPlayerView: NSView {
         let hitSize: CGFloat = 11
         let hitY = h - 3 - hitSize
         closeHitZone.frame = NSRect(x: 263, y: hitY, width: hitSize, height: hitSize)
+        maximizeHitZone.frame = NSRect(x: 255, y: hitY, width: hitSize, height: hitSize)
         minimizeHitZone.frame = NSRect(x: 243, y: hitY, width: hitSize, height: hitSize)
 
         // Menu icon hit-zone — webamp top-left icon at (6, 3, 9×9)
@@ -458,6 +464,11 @@ class MainPlayerView: NSView {
         }
     }
 
+    private func doubleSize() {
+        guard let delegate = NSApp.delegate as? AppDelegate else { return }
+        delegate.toggleDoubleSize()
+    }
+    
     private func showWindowMenu() {
         guard let delegate = NSApp.delegate as? AppDelegate else { return }
         let menu = delegate.buildCornerPopupMenu()
@@ -509,7 +520,7 @@ class MainPlayerView: NSView {
         guard point.y >= titleBarMinY else { super.mouseDown(with: event); return }
         // Don't drag from close/minimize/menu hit-zones
         if closeHitZone.frame.contains(point) || minimizeHitZone.frame.contains(point)
-            || menuHitZone.frame.contains(point) {
+            || maximizeHitZone.frame.contains(point) || menuHitZone.frame.contains(point) {
             super.mouseDown(with: event)
             return
         }
