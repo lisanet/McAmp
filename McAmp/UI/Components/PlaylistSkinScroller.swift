@@ -12,7 +12,6 @@ final class PlaylistSkinScroller: NSView {
     var logicalWidth: Int = 275 {
         didSet { if oldValue != logicalWidth { needsDisplay = true } }
     }
-    private var compositeImage: NSImage?
     private var compositeWidth: Int = 0
     private var compositePressed = false
     weak var scrollView: NSScrollView?
@@ -26,7 +25,6 @@ final class PlaylistSkinScroller: NSView {
         skinObserver = SkinManager.shared.$currentSkin
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.compositeImage = nil
                 self?.needsDisplay = true
             }
     }
@@ -73,7 +71,9 @@ final class PlaylistSkinScroller: NSView {
     }
     
     private func compositeScroller() -> NSImage? {
-        if let compositeImage, compositeWidth == logicalWidth, compositePressed == pressed { return compositeImage }
+        if let cached = WinampTheme.scrollerCompositeImage,
+            compositeWidth == logicalWidth,
+            compositePressed == pressed { return cached }
         guard let scroller = WinampTheme.sprite(.playlistScrollHandle(pressed: pressed)) else { return nil }
         
         let w = CGFloat(logicalWidth)
@@ -84,7 +84,7 @@ final class PlaylistSkinScroller: NSView {
         scroller.draw(at: NSPoint(x: w - 15, y: 0), from: .zero, operation: .sourceOver, fraction: 1)
         
         result.unlockFocus()
-        compositeImage = result
+        WinampTheme.scrollerCompositeImage = result
         compositeWidth = logicalWidth
         compositePressed = pressed
         return result
