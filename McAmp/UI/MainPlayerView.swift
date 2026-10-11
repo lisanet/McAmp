@@ -2,6 +2,11 @@ import Cocoa
 import Combine
 import UniformTypeIdentifiers
 
+final class HitZone: NSView {
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+        true
+    }
+}
 
 class MainPlayerView: NSView {
     // Callbacks
@@ -37,11 +42,11 @@ class MainPlayerView: NSView {
     private let playIndicator = PlayStateIndicator()
 
     // Invisible click hit-zones for close/minimize/menu when skinned (replace hidden titleBar)
-    private let closeHitZone = NSView()
-    private let minimizeHitZone = NSView()
-    private let menuHitZone = NSView()
+    private let closeHitZone = HitZone()
+    private let minimizeHitZone = HitZone()
+    private let menuHitZone = HitZone()
     // Click target over the Nullsoft logo baked into main.bmp, right of the repeat button.
-    private let githubHitZone = NSView()
+    private let githubHitZone = HitZone()
 
     private var cancellables = Set<AnyCancellable>()
     private var skinObserver: AnyCancellable?
