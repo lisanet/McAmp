@@ -54,10 +54,6 @@ class EqualizerView: NSView {
 
     private let bandNames = ["32", "64", "125", "250", "500", "1K", "2K", "4K", "8K", "16K"]
 
-    /// View height in logical points. eqmain.bmp is 116 px tall, so when a skin
-    /// is active we shrink the view to match and draw the sprite 1:1.
-    let desiredHeight: CGFloat = 116
-
     override init(frame: NSRect) {
         super.init(frame: frame)
         wantsLayer = true

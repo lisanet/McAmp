@@ -56,12 +56,6 @@ class MainPlayerView: NSView {
     var onTitleBarDragBegan: ((NSPoint) -> Void)?
     var onTitleBarDragChanged: ((NSPoint) -> Void)?
     var onTitleBarDragEnded: ((NSPoint) -> Void)?
-
-    /// View height in logical (pre-scale) points. Winamp's main.bmp is exactly
-    /// 116 px tall, so when a skin is active we shrink the view to match and
-    /// lay out subviews at the sprite's native pixel coordinates.
-
-    let desiredHeight: CGFloat = 116
     
     override init(frame: NSRect) {
         super.init(frame: frame)
