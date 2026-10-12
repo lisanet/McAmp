@@ -77,15 +77,9 @@ private extension RadioAudioParser {
     
     func handleProperty(stream: AudioFileStreamID, propertyID: AudioFileStreamPropertyID) {
         switch propertyID {
-        case kAudioFileStreamProperty_DataFormat:
-            readDataFormat(from: stream)
-        case kAudioFileStreamProperty_MagicCookieData:
-            readMagicCookie(from: stream)
         case kAudioFileStreamProperty_ReadyToProducePackets:
             readDataFormat(from: stream)
             readMagicCookie(from: stream)
-//        case kAudioFileStreamProperty_FormatList:
-//            readFormatList(from: stream)
         default:
             break
         }
@@ -97,11 +91,45 @@ private extension RadioAudioParser {
 
         let status = AudioFileStreamGetProperty(stream, kAudioFileStreamProperty_DataFormat, &size, &description)
         guard status == noErr else { return }
-        guard let format = AVAudioFormat(streamDescription: &description) else { return }
 
+        if let better = bestPlayableFormat(from: stream) {
+            // format from format list (HE-AAC: kAudioFormatMPEG4AAC_HE, 44100/48000 Hz)
+            description = better
+        } else if description.mFormatID == kAudioFormatMPEG4AAC, description.mSampleRate <= 24000 {
+            // Fallback-Heuristik: implizites SBR vermuten
+            description.mFormatID = kAudioFormatMPEG4AAC_HE
+            description.mSampleRate *= 2
+            description.mFramesPerPacket = 2048
+        }
+        
+        guard let format = AVAudioFormat(streamDescription: &description) else { return }
         delegate?.radioAudioParser(self, didFindFormat: format)
     }
 
+    func bestPlayableFormat(from stream: AudioFileStreamID) -> AudioStreamBasicDescription? {
+        var size: UInt32 = 0
+        var writable = DarwinBoolean(false)
+
+        guard AudioFileStreamGetPropertyInfo(stream, kAudioFileStreamProperty_FormatList, &size, &writable) == noErr,
+              size > 0 else { return nil }
+
+        let count = Int(size) / MemoryLayout<AudioFormatListItem>.size
+        var items = [AudioFormatListItem](repeating: AudioFormatListItem(), count: count)
+
+        guard AudioFileStreamGetProperty(stream, kAudioFileStreamProperty_FormatList, &size, &items) == noErr else { return nil }
+
+        var index: UInt32 = 0
+        var indexSize = UInt32(MemoryLayout<UInt32>.size)
+        let status = AudioFormatGetProperty(kAudioFormatProperty_FirstPlayableFormatFromList,
+                                            UInt32(count * MemoryLayout<AudioFormatListItem>.size),
+                                            items,
+                                            &indexSize,
+                                            &index)
+
+        guard status == noErr, Int(index) < count else { return nil }
+        return items[Int(index)].mASBD
+    }
+    
     func readMagicCookie(from stream: AudioFileStreamID) {
         var size: UInt32 = 0
         var writable = DarwinBoolean(false)
@@ -119,22 +147,6 @@ private extension RadioAudioParser {
 
         delegate?.radioAudioParser(self, didFindMagicCookie: cookie)
     }
-    
-//    func readFormatList(from stream: AudioFileStreamID) {
-//        var size: UInt32 = 0
-//        var writable = DarwinBoolean(false)
-//
-//        let status = AudioFileStreamGetPropertyInfo(stream, kAudioFileStreamProperty_FormatList, &size, &writable)
-//        guard status == noErr, size > 0 else { return}
-//
-//        let count = Int(size) / MemoryLayout<AudioFormatListItem>.size
-//        var items = Array(repeating: AudioFormatListItem(), count: count)
-//        let readStatus = AudioFileStreamGetProperty(stream, kAudioFileStreamProperty_FormatList, &size, &items)
-//
-//        guard readStatus == noErr else {
-//            return
-//        }
-//    }
 }
 
 

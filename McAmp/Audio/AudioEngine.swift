@@ -404,9 +404,12 @@ class AudioEngine: ObservableObject {
         debugLog("🟡 gen=\(playbackGeneration), isPlaying=\(isPlaying)")
         // radio stream
         radioStream?.stop()
+        radioQueue.async { [weak self] in
+            self?.radioDecoder = nil
+            self?.radioMagicCookie = nil
+        }
         radioStream = nil
         radioParser = nil
-        radioDecoder = nil
         radioScheduledBuffers = 0
         radioPlaybackStarted = false
         radioBuffering = false
@@ -415,7 +418,6 @@ class AudioEngine: ObservableObject {
         streamTitle = ""
         radioBitrate = 0
         radioSampleRate = 0
-        radioMagicCookie = nil
 
         playerNode.stop()
         isPlaying = false
