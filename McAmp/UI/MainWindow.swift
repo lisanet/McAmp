@@ -3,8 +3,16 @@ import Combine
 import QuartzCore
 
 private final class WinampAuxiliaryWindow: NSWindow {
+    var onMouseDown: (() -> Void)?
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
+
+    override func sendEvent(_ event: NSEvent) {
+        if event.type == .leftMouseDown {
+            onMouseDown?()
+        }
+        super.sendEvent(event)
+    }
 }
 
 class MainWindow: NSWindow {
@@ -75,7 +83,8 @@ class MainWindow: NSWindow {
         didSet {
             mainPlayerView.isEQActive = showEqualizer
             if showEqualizer {
-                equalizerWindow.orderFront(nil)
+                equalizerWindow.order(.below, relativeTo: windowNumber)
+                bringAllWindowsToFront(prioritizing: self)
             } else {
                 equalizerWindow.orderOut(nil)
             }
@@ -86,7 +95,9 @@ class MainWindow: NSWindow {
         didSet {
             mainPlayerView.isPLActive = showPlaylist
             if showPlaylist {
-                playlistWindow.orderFront(nil)
+                let anchor = showEqualizer ? equalizerWindow.windowNumber : windowNumber
+                playlistWindow.order(.below, relativeTo: anchor)
+                bringAllWindowsToFront(prioritizing: self)
             } else {
                 playlistWindow.orderOut(nil)
             }
@@ -179,6 +190,8 @@ class MainWindow: NSWindow {
         playlistView.onResizeChanged = { [weak self] w, h in
             self?.setPlaylistLogicalSize(width: w, height: h)
         }
+
+        setupWindowActivation()
     }
 
     func captureDockLayout() -> DockLayoutState {
@@ -211,7 +224,9 @@ class MainWindow: NSWindow {
 
     private func wireDragging() {
         mainPlayerView.onTitleBarDragBegan = { [weak self] point in
-            self?.dockingController.beginDragging(.main, mouseLocation: point)
+            guard let self else { return }
+            self.bringAllWindowsToFront(prioritizing: self)
+            self.dockingController.beginDragging(.main, mouseLocation: point)
         }
         mainPlayerView.onTitleBarDragChanged = { [weak self] point in
             self?.dockingController.updateDragging(mouseLocation: point)
@@ -221,7 +236,9 @@ class MainWindow: NSWindow {
         }
 
         equalizerView.onTitleBarDragBegan = { [weak self] point in
-            self?.dockingController.beginDragging(.equalizer, mouseLocation: point)
+            guard let self else { return }
+            self.bringAllWindowsToFront(prioritizing: self.equalizerWindow)
+            self.dockingController.beginDragging(.equalizer, mouseLocation: point)
         }
         equalizerView.onTitleBarDragChanged = { [weak self] point in
             self?.dockingController.updateDragging(mouseLocation: point)
@@ -232,13 +249,82 @@ class MainWindow: NSWindow {
 
         // PlaylistView gets the same three callbacks; see PlaylistView_DockingPatch.swift.
         playlistView.onTitleBarDragBegan = { [weak self] point in
-            self?.dockingController.beginDragging(.playlist, mouseLocation: point)
+            guard let self else { return }
+            self.bringAllWindowsToFront(prioritizing: self.playlistWindow)
+            self.dockingController.beginDragging(.playlist, mouseLocation: point)
         }
         playlistView.onTitleBarDragChanged = { [weak self] point in
             self?.dockingController.updateDragging(mouseLocation: point)
         }
         playlistView.onTitleBarDragEnded = { [weak self] point in
             self?.dockingController.endDragging(mouseLocation: point)
+        }
+    }
+
+    private func setupWindowActivation() {
+        equalizerWindow.onMouseDown = { [weak self] in
+            guard let self else { return }
+            self.bringAllWindowsToFront(prioritizing: self.equalizerWindow)
+        }
+        playlistWindow.onMouseDown = { [weak self] in
+            guard let self else { return }
+            self.bringAllWindowsToFront(prioritizing: self.playlistWindow)
+        }
+
+        for win in [self as NSWindow, equalizerWindow, playlistWindow] {
+            NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification, object: win)
+                .sink { [weak self] notification in
+                    guard let self, let activated = notification.object as? NSWindow else { return }
+                    self.bringAllWindowsToFront(prioritizing: activated)
+                }
+                .store(in: &cancellables)
+        }
+
+        NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
+            .sink { [weak self] _ in
+                self?.bringAllWindowsToFront()
+            }
+            .store(in: &cancellables)
+    }
+
+    override func sendEvent(_ event: NSEvent) {
+        if event.type == .leftMouseDown {
+            bringAllWindowsToFront(prioritizing: self)
+        }
+        super.sendEvent(event)
+    }
+
+    private var isOrderingWindows = false
+
+    func bringAllWindowsToFront(prioritizing topWindow: NSWindow? = nil) {
+        guard !isOrderingWindows, isVisible else { return }
+        isOrderingWindows = true
+        defer { isOrderingWindows = false }
+
+        let top: NSWindow
+        if let topWindow, topWindow == self || topWindow == equalizerWindow || topWindow == playlistWindow {
+            top = topWindow
+        } else if isKeyWindow {
+            top = self
+        } else if equalizerWindow.isKeyWindow {
+            top = equalizerWindow
+        } else if playlistWindow.isKeyWindow {
+            top = playlistWindow
+        } else {
+            top = self
+        }
+
+        top.orderFront(nil)
+
+        var others: [NSWindow] = []
+        if top != self { others.append(self) }
+        if showEqualizer && top != equalizerWindow { others.append(equalizerWindow) }
+        if showPlaylist && top != playlistWindow { others.append(playlistWindow) }
+
+        var anchor = top.windowNumber
+        for window in others {
+            window.order(.below, relativeTo: anchor)
+            anchor = window.windowNumber
         }
     }
 
@@ -249,9 +335,12 @@ class MainWindow: NSWindow {
     }
 
     override func orderFront(_ sender: Any?) {
-        super.orderFront(sender)
-        if showEqualizer { equalizerWindow.orderFront(sender) }
-        if showPlaylist { playlistWindow.orderFront(sender) }
+        bringAllWindowsToFront(prioritizing: self)
+    }
+
+    override func makeKeyAndOrderFront(_ sender: Any?) {
+        super.makeKeyAndOrderFront(sender)
+        bringAllWindowsToFront(prioritizing: self)
     }
 
     override func orderOut(_ sender: Any?) {
@@ -268,8 +357,7 @@ class MainWindow: NSWindow {
 
     override func deminiaturize(_ sender: Any?) {
         super.deminiaturize(sender)
-        if showEqualizer { equalizerWindow.orderFront(sender) }
-        if showPlaylist { playlistWindow.orderFront(sender) }
+        bringAllWindowsToFront(prioritizing: self)
     }
 
     override func keyDown(with event: NSEvent) {

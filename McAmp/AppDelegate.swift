@@ -493,9 +493,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func toggleShuffle() { playlistManager.shuffleTracks() }
 
     @objc private func showPlayerAction() {
-        mainWindow.orderFrontRegardless()
+        mainWindow.bringAllWindowsToFront(prioritizing: mainWindow)
         mainWindow.makeKeyAndOrderFront(nil)
-        NSApp.activate()
+        NSApp.activate(ignoringOtherApps: true)
     }
 
     @objc private func toggleEQ() { mainWindow.showEqualizer.toggle() }
