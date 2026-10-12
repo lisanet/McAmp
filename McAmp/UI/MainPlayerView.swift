@@ -260,11 +260,11 @@ class MainPlayerView: NSView {
         titleBar.frame = NSRect(x: 0, y: h - 16, width: bounds.width, height: 16)
 
         // Close / minimize hit-zones — webamp close(264,3,9×9), min(244,3,9×9)
-        let hitSize: CGFloat = 11
-        let hitY = h - 3 - hitSize
-        closeHitZone.frame = NSRect(x: 263, y: hitY, width: hitSize, height: hitSize)
-        maximizeHitZone.frame = NSRect(x: 255, y: hitY, width: hitSize, height: hitSize)
-        minimizeHitZone.frame = NSRect(x: 243, y: hitY, width: hitSize, height: hitSize)
+        let hitSize: CGFloat = 10
+        let hitY = h - 2 - hitSize
+        closeHitZone.frame = NSRect(x: 264, y: hitY, width: hitSize, height: hitSize)
+        maximizeHitZone.frame = NSRect(x: 254, y: hitY, width: hitSize, height: hitSize)
+        minimizeHitZone.frame = NSRect(x: 244, y: hitY, width: hitSize, height: hitSize)
 
         // Menu icon hit-zone — webamp top-left icon at (6, 3, 9×9)
         menuHitZone.frame = NSRect(x: 6, y: hitY, width: hitSize, height: hitSize)
