@@ -61,6 +61,7 @@ struct Track: Identifiable, Codable, Equatable {
 
     var formattedDuration: String {
         let totalSeconds = Int(duration)
+        if isStream, totalSeconds == 0 { return "" }
         let minutes = totalSeconds / 60
         let seconds = totalSeconds % 60
         return "\(minutes):\(String(format: "%02d", seconds))"
