@@ -9,10 +9,10 @@ final class PlaylistSkinScroller: NSView {
     private static let handleW: CGFloat = 8
     private static let handleH: CGFloat = 18
 
-    var logicalWidth: Int = 275 {
+    var logicalWidth: CGFloat = WinampTheme.windowWidth {
         didSet { if oldValue != logicalWidth { needsDisplay = true } }
     }
-    private var compositeWidth: Int = 0
+    private var compositeWidth: CGFloat = 0
     private var compositePressed = false
     weak var scrollView: NSScrollView?
     private var pressed = false

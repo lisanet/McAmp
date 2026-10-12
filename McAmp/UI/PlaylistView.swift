@@ -15,14 +15,14 @@ class PlaylistView: NSView {
     private weak var playlistManager: PlaylistManager?
     private var lastColumnWidth: CGFloat = 0
     private var dragOrigin: NSPoint?
-    var onResizeBegan: (() -> (Int, Int, CGFloat))?
-    var onResizeChanged: ((Int, Int) -> Void)?
-    private var resizeStart: (mouse: NSPoint, width: Int, height: Int, scale: CGFloat)?
+    var onResizeBegan: (() -> (CGFloat, CGFloat, CGFloat))?
+    var onResizeChanged: ((CGFloat, CGFloat) -> Void)?
+    private var resizeStart: (mouse: NSPoint, width: CGFloat, height: CGFloat, scale: CGFloat)?
     private var compositeSize: NSSize = .zero
     private var compositeActive = true
-    private var logicalWidth: Int = 275
-    private var logicalHeight: Int = 232
-    func updateLogicalSize(width: Int, height: Int) {
+    private var logicalWidth: CGFloat = WinampTheme.windowWidth
+    private var logicalHeight: CGFloat = WinampTheme.playlistMinHeight
+    func updateLogicalSize(width: CGFloat, height: CGFloat) {
         logicalWidth = width
         logicalHeight = height
         WinampTheme.plvCompositeImage = nil
@@ -128,7 +128,7 @@ class PlaylistView: NSView {
         
         
         let isActive = window?.isKeyWindow ?? true
-        let requestedSize = NSSize(width: CGFloat(logicalWidth), height: CGFloat(logicalHeight))
+        let requestedSize = NSSize(width: logicalWidth, height: logicalHeight)
         if let cached = WinampTheme.plvCompositeImage,
             compositeSize == requestedSize,
             compositeActive == isActive { return cached }
@@ -145,8 +145,8 @@ class PlaylistView: NSView {
             let br = WinampTheme.sprite(.playlistBottomRightCorner) else { return nil }
         
 
-        let w = CGFloat(logicalWidth)
-        let h = CGFloat(logicalHeight)
+        let w = logicalWidth
+        let h = logicalHeight
         let result = NSImage(size: NSSize(width: w, height: h))
         result.lockFocus()
         
@@ -230,8 +230,8 @@ class PlaylistView: NSView {
     /// corner strip (ADD/REM baked in), 12px left tile, 20px right tile.
     /// The track list fills the middle.
     private func layoutSkinned() {
-        let w = CGFloat(logicalWidth)
-        let h = CGFloat(logicalHeight)
+        let w = logicalWidth
+        let h = logicalHeight
         let topH: CGFloat = 20
         let bottomH: CGFloat = 38
         let leftW: CGFloat = 12
@@ -533,22 +533,22 @@ class PlaylistView: NSView {
 
     // LIST OPTS lives in the bottom-right corner (150×38 at x=w-150).
     // Webamp #playlist-list-menu: bottom:12, right:22, w:22, h:18.
-    private var skinnedListOptsRect: NSRect { NSRect(x: CGFloat(logicalWidth - 44), y: 12, width: 22, height: 18) }
+    private var skinnedListOptsRect: NSRect { NSRect(x: logicalWidth - 44, y: 12, width: 22, height: 18) }
 
     // resize handle
-    private var resizeHandleRect: NSRect { NSRect(x: CGFloat(logicalWidth - 12 - 3), y: 3, width: 12, height: 12) }
+    private var resizeHandleRect: NSRect { NSRect(x: logicalWidth - 12 - 3, y: 3, width: 12, height: 12) }
 
     // Six baked mini-transport buttons in pledit.bmp's BR corner. Webamp
     // .playlist-action-buttons: top:22, left:3, children 10×10, packed in
     // a flex row. AppKit y = 38 - 22 - 10 = 6. Corner draws at
     // (bounds.width - 150, 0), so corner-local x maps to
     // bounds.width - 150 + corner_x.
-    private var skinnedMiniPrevRect: NSRect { NSRect(x: CGFloat(logicalWidth - 147), y: 6, width: 10, height: 10) }
-    private var skinnedMiniPlayRect: NSRect { NSRect(x: CGFloat(logicalWidth - 137), y: 6, width: 10, height: 10) }
-    private var skinnedMiniPauseRect: NSRect { NSRect(x: CGFloat(logicalWidth - 127), y: 6, width: 10, height: 10) }
-    private var skinnedMiniStopRect: NSRect { NSRect(x: CGFloat(logicalWidth - 117), y: 6, width: 10, height: 10) }
-    private var skinnedMiniNextRect: NSRect { NSRect(x: CGFloat(logicalWidth - 107), y: 6, width: 10, height: 10) }
-    private var skinnedMiniEjectRect: NSRect { NSRect(x: CGFloat(logicalWidth -  97), y: 6, width: 10, height: 10) }
+    private var skinnedMiniPrevRect: NSRect { NSRect(x: logicalWidth - 147, y: 6, width: 10, height: 10) }
+    private var skinnedMiniPlayRect: NSRect { NSRect(x: logicalWidth - 137, y: 6, width: 10, height: 10) }
+    private var skinnedMiniPauseRect: NSRect { NSRect(x: logicalWidth - 127, y: 6, width: 10, height: 10) }
+    private var skinnedMiniStopRect: NSRect { NSRect(x: logicalWidth - 117, y: 6, width: 10, height: 10) }
+    private var skinnedMiniNextRect: NSRect { NSRect(x: logicalWidth - 107, y: 6, width: 10, height: 10) }
+    private var skinnedMiniEjectRect: NSRect { NSRect(x: logicalWidth -  97, y: 6, width: 10, height: 10) }
 
     // MARK: - Mouse handling (skinned mode: dragging + bottom buttons)
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
@@ -595,10 +595,10 @@ class PlaylistView: NSView {
     override func mouseDragged(with event: NSEvent) {
         if let start = resizeStart {
             let now = NSEvent.mouseLocation
-            let dx = Int((now.x - start.mouse.x) / start.scale + 12.5)
-            let dy = Int((start.mouse.y - now.y) / start.scale + 14.5)
-            let resizedW = max(275, ((start.width + dx) / 25) * 25)
-            let resizedH = max(232, ((start.height + dy) / 29) * 29)
+            let dx = (now.x - start.mouse.x) / start.scale
+            let dy = (start.mouse.y - now.y) / start.scale
+            let resizedW = max(WinampTheme.windowWidth, ((start.width + dx) / 25).rounded() * 25)
+            let resizedH = max(WinampTheme.playlistMinHeight, ((start.height + dy) / 29).rounded() * 29)
             onResizeChanged?(resizedW, resizedH)
             return
         }

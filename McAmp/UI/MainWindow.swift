@@ -19,21 +19,21 @@ class MainWindow: NSWindow {
     private let dockingController = WindowDockingController()
     private var cancellables = Set<AnyCancellable>()
     private weak var audioEngine: AudioEngine?
-    private(set) var playlistLogicalWidth = 275
-    private(set) var playlistLogicalHeight = 232
+    private(set) var playlistLogicalWidth = WinampTheme.windowWidth
+    private(set) var playlistLogicalHeight = WinampTheme.playlistMinHeight
     private var playlistContainer: NSView?
     private var appliedWindowScale = WinampTheme.scale
 
     private func applyPlaylistGeometry(keepingTopLeft: Bool) {
         let scale = WinampTheme.scale
         let old = playlistWindow.frame
-        let size = NSSize(width: (CGFloat(playlistLogicalWidth) * scale).rounded(),
-                          height: (CGFloat(playlistLogicalHeight) * scale).rounded())
+        let size = NSSize(width: (playlistLogicalWidth * scale).rounded(),
+                          height: (playlistLogicalHeight * scale).rounded())
         let origin = NSPoint(x: old.minX, y: keepingTopLeft ? old.maxY - size.height : old.minY)
         playlistWindow.setFrame(NSRect(origin: origin, size: size), display: true)
         if let container = playlistWindow.contentView {
             container.frame = NSRect(origin: .zero, size: size)
-            container.setBoundsSize(NSSize(width: CGFloat(playlistLogicalWidth), height: CGFloat(playlistLogicalHeight)))
+            container.setBoundsSize(NSSize(width: playlistLogicalWidth, height: playlistLogicalHeight))
             playlistView.frame = container.bounds
             playlistView.updateLogicalSize(width: playlistLogicalWidth, height: playlistLogicalHeight)
             playlistView.needsLayout = true
@@ -41,7 +41,7 @@ class MainWindow: NSWindow {
         }
     }
 
-    func setPlaylistLogicalSize(width: Int, height: Int) {
+    func setPlaylistLogicalSize(width: CGFloat, height: CGFloat) {
         guard width != playlistLogicalWidth || height != playlistLogicalHeight else { return }
         playlistLogicalWidth = width
         playlistLogicalHeight = height
@@ -175,7 +175,7 @@ class MainWindow: NSWindow {
         dockingController.dock(.equalizer, to: .main)
         dockingController.dock(.playlist, to: .equalizer)
         playlistView.onResizeBegan = { [weak self] in
-            guard let self else { return (275, 232, WinampTheme.scale) }
+            guard let self else { return (WinampTheme.windowWidth, WinampTheme.playlistMinHeight, WinampTheme.scale) }
             return (self.playlistLogicalWidth, self.playlistLogicalHeight, WinampTheme.scale)
         }
         playlistView.onResizeChanged = { [weak self] w, h in
