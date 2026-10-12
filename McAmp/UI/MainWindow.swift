@@ -124,7 +124,6 @@ class MainWindow: NSWindow {
                 defer: false
             )
             window.isMovableByWindowBackground = false
-            window.backgroundColor = WinampTheme.frameBackground
             window.isOpaque = true
             window.hasShadow = true
             window.isReleasedWhenClosed = false
@@ -155,7 +154,6 @@ class MainWindow: NSWindow {
 
         isMovableByWindowBackground = false
         level = .normal
-        backgroundColor = WinampTheme.frameBackground
         isOpaque = true
         hasShadow = true
         isReleasedWhenClosed = false
@@ -338,7 +336,6 @@ class MainWindow: NSWindow {
         } else {
             mainPlayerView.layer?.mask = nil
             isOpaque = true
-            backgroundColor = WinampTheme.frameBackground
         }
         invalidateShadow()
     }

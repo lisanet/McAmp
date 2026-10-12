@@ -57,16 +57,13 @@ class EqualizerView: NSView {
     override init(frame: NSRect) {
         super.init(frame: frame)
         wantsLayer = true
-        layer?.backgroundColor = WinampTheme.frameBackground.cgColor
         setupSubviews()
         skinObserver = SkinManager.shared.$currentSkin
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                // self?.applySkinVisibility()
                 self?.needsDisplay = true
                 self?.needsLayout = true
             }
-        // applySkinVisibility()
     }
 
     required init?(coder: NSCoder) { fatalError() }

@@ -45,7 +45,6 @@ class PlaylistView: NSView {
     override init(frame: NSRect) {
         super.init(frame: frame)
         wantsLayer = true
-        layer?.backgroundColor = WinampTheme.frameBackground.cgColor
         setupSubviews()
         registerForDraggedTypes([.fileURL])
         tableView.registerForDraggedTypes([PlaylistView.internalRowType, .fileURL])
