@@ -238,7 +238,7 @@ class PlaylistView: NSView {
 
         // maybe we need it later
         titleBar.isHidden = true
-        titleBar.frame = NSRect(x: 0, y: h - topH, width: w, height: topH)
+        titleBar.frame = NSRect(x: 0, y: h - 14, width: w, height: 14)
  
         scrollView.frame = NSRect(
             x: leftW,
@@ -563,8 +563,8 @@ class PlaylistView: NSView {
             return
         }
 
-        // Title bar drag zone (top 20px)
-        if point.y >= bounds.height - 20 {
+        // Title bar drag zone (top 14px)
+        if point.y >= bounds.height - 14 {
             dragOrigin = event.locationInWindow
 
             // Start docking drag

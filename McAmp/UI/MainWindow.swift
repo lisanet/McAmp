@@ -31,7 +31,10 @@ class MainWindow: NSWindow {
     private(set) var playlistLogicalHeight = WinampTheme.playlistMinHeight
     private var playlistContainer: NSView?
     private var appliedWindowScale = WinampTheme.scale
-
+    private var mainLogicalHeight: CGFloat {
+        mainPlayerView.isShaded ? WinampTheme.mainShadedHeight : WinampTheme.mainPlayerHeight
+    }
+    
     private func applyPlaylistGeometry(keepingTopLeft: Bool) {
         let scale = WinampTheme.scale
         let old = playlistWindow.frame
@@ -56,12 +59,28 @@ class MainWindow: NSWindow {
         applyPlaylistGeometry(keepingTopLeft: true)
     }
 
+    private func applyMainShadeState() {
+        let scale = WinampTheme.scale
+        let height = mainLogicalHeight
+        let size = NSSize(width: (WinampTheme.windowWidth * scale).rounded(),
+                          height: (height * scale).rounded())
+        dockingController.resizeKeepingTopLeft(.main, to: size)
+
+        if let container = contentView {
+            container.setBoundsSize(NSSize(width: WinampTheme.windowWidth, height: height))
+            mainPlayerView.frame = container.bounds
+        }
+        mainPlayerView.needsLayout = true
+        mainPlayerView.needsDisplay = true
+        applyRegionMaskFromCurrentSkin()
+    }
+    
     private func applyAllWindowScales() {
         let previousFrames = dockingController.windowFrames()
         let previousScale = appliedWindowScale
         let scale = WinampTheme.scale
         for (window, view, width, height) in [
-            (self as NSWindow, mainPlayerView as NSView, WinampTheme.windowWidth, WinampTheme.mainPlayerHeight),
+            (self as NSWindow, mainPlayerView as NSView, WinampTheme.windowWidth, WinampTheme.mainShadedHeight),
             (equalizerWindow as NSWindow, equalizerView as NSView, WinampTheme.windowWidth, WinampTheme.equalizerHeight)
         ] {
             let old = window.frame
@@ -180,6 +199,8 @@ class MainWindow: NSWindow {
 
         wireDragging()
 
+        mainPlayerView.onShadeChanged = { [weak self] _ in self?.applyMainShadeState() }
+        
         // Initial classic Winamp stack: MAIN -> EQ -> PLAYLIST.
         dockingController.dock(.equalizer, to: .main)
         dockingController.dock(.playlist, to: .equalizer)
@@ -413,7 +434,7 @@ class MainWindow: NSWindow {
 
     func applyRegionMaskFromCurrentSkin() {
         mainPlayerView.wantsLayer = true
-        if let region = SkinManager.shared.currentSkin.mainWindowRegion {
+        if !mainPlayerView.isShaded, let region = SkinManager.shared.currentSkin.mainWindowRegion {
             let mask = CAShapeLayer()
             mask.path = region.cgPath
             mask.fillColor = NSColor.black.cgColor

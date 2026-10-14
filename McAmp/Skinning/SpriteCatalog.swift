@@ -29,6 +29,7 @@ enum SpriteKey: Hashable {
     case titleBarInactive
     case titleBarCloseButton(pressed: Bool)
     case titleBarShadeButton(pressed: Bool)
+    case titleShadedBar
 
     // EQ title bar (lives inside eqmain.bmp, not titlebar.bmp)
     case eqTitleBar(active: Bool)
@@ -126,6 +127,9 @@ enum SpriteCoordinates {
         case .titleBarShadeButton(let pressed):
             return SpriteInfo(sheet: "titlebar", rect: CGRect(x:  0, y: pressed ? 27 : 18, width: 9, height: 9))
 
+        case .titleShadedBar:
+            return SpriteInfo(sheet: "titlebar", rect: CGRect(x: 27, y: 29, width: 275, height: 14))
+            
         // MARK: eq titlebar — lives inside eqmain.bmp
         case .eqTitleBar(let active):
             return SpriteInfo(sheet: "eqmain", rect: CGRect(x: 0, y: active ? 134 : 149, width: 275, height: 14))

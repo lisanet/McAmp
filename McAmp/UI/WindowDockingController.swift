@@ -323,4 +323,36 @@ final class WindowDockingController {
         dragStartFrames.removeAll()
         currentSnap = nil
     }
+    
+    /// Resizes a window keeping its top-left corner fixed. Windows docked to its
+    /// BOTTOM edge (plus their whole subtree) follow so no gap/overlap appears.
+    func resizeKeepingTopLeft(_ id: DockWindowID, to size: NSSize) {
+        guard let window = windows[id] else { return }
+        let old = window.frame
+        let new = NSRect(x: old.minX, y: old.maxY - size.height, width: size.width, height: size.height)
+        let dy = new.minY - old.minY          // >0 when shrinking, <0 when growing
+        let tolerance: CGFloat = 2
+
+        movingGroupInternally = true
+        defer {
+            if let main = windows[.main] { lastMainOrigin = main.frame.origin }
+            movingGroupInternally = false
+        }
+
+        if dy != 0 {
+            for (child, p) in parent where p == id {
+                guard let childWindow = windows[child] else { continue }
+                let f = childWindow.frame
+                let touchesBottom = abs(f.maxY - old.minY) <= tolerance
+                    && f.maxX > old.minX && f.minX < old.maxX
+                guard touchesBottom else { continue }   // side-docked: top edge stays, no move
+                for member in descendants(of: child).union([child]) {
+                    guard let w = windows[member] else { continue }
+                    w.setFrameOrigin(NSPoint(x: w.frame.minX, y: w.frame.minY + dy))
+                }
+            }
+        }
+        window.setFrame(new, display: false)
+    }
+    
 }

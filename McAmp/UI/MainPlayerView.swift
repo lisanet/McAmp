@@ -22,6 +22,14 @@ class MainPlayerView: NSView {
         set { plButton.isActive = newValue }
     }
 
+    var onShadeChanged: ((Bool) -> Void)?
+    var isShaded: Bool = false {
+        didSet {
+            guard isShaded != oldValue else { return }
+            onShadeChanged?(isShaded)
+        }
+    }
+    
     // Subviews
     private let titleBar = TitleBarView()
     private let timeDisplay = SevenSegmentView()
@@ -40,14 +48,19 @@ class MainPlayerView: NSView {
 
     // Play state indicator
     private let playIndicator = PlayStateIndicator()
-
-    // Invisible click hit-zones for close/minimize/menu when skinned (replace hidden titleBar)
-    private let closeHitZone = HitZone()
-    private let maximizeHitZone = HitZone()
-    private let minimizeHitZone = HitZone()
-    private let menuHitZone = HitZone()
     // Click target over the Nullsoft logo baked into main.bmp, right of the repeat button.
     private let githubHitZone = HitZone()
+
+    private var bodyViews: [NSView] {
+        [timeDisplay, spectrumView, lcdDisplay, seekSlider, volumeSlider, balanceSlider,
+         transportBar, shuffleButton, repeatButton, eqButton, plButton, githubHitZone]
+    }
+    
+    // Invisible click hit-zones for close/minimize/menu when skinned (replace hidden titleBar)
+    private let closeHitZone = HitZone()
+    private let shadedHitZone = HitZone()
+    private let minimizeHitZone = HitZone()
+    private let menuHitZone = HitZone()
 
     private var cancellables = Set<AnyCancellable>()
     private var skinObserver: AnyCancellable?
@@ -80,10 +93,10 @@ class MainPlayerView: NSView {
     private func setupSubviews() {
         // Title bar
         // titleBar.titleText = "WAMP"
-        titleBar.showButtons = true
-        titleBar.onClose = { NSApp.terminate(nil) }
-        titleBar.onMinimize = { [weak self] in self?.window?.miniaturize(nil) }
-        titleBar.onMenuClick = { [weak self] in self?.showWindowMenu() }
+        // titleBar.showButtons = true
+        // titleBar.onClose = { NSApp.terminate(nil) }
+        // titleBar.onMinimize = { [weak self] in self?.window?.miniaturize(nil) }
+        // titleBar.onMenuClick = { [weak self] in self?.showWindowMenu() }
         addSubview(titleBar)
 
         // Time display
@@ -148,14 +161,14 @@ class MainPlayerView: NSView {
         // then, so we need invisible NSViews at the locations where main.bmp paints
         // these buttons so the user can still interact with them).
         addSubview(closeHitZone)
-        addSubview(maximizeHitZone)
+        addSubview(shadedHitZone)
         addSubview(minimizeHitZone)
         addSubview(menuHitZone)
         addSubview(githubHitZone)
         let closeClick = NSClickGestureRecognizer(target: self, action: #selector(handleSkinnedClose))
         closeHitZone.addGestureRecognizer(closeClick)
-        let maximizeClick = NSClickGestureRecognizer(target: self, action: #selector(handleSkinnedMaximize))
-        maximizeHitZone.addGestureRecognizer(maximizeClick)
+        let shadedClick = NSClickGestureRecognizer(target: self, action: #selector(handleSkinnedShade))
+        shadedHitZone.addGestureRecognizer(shadedClick)
         let minimizeClick = NSClickGestureRecognizer(target: self, action: #selector(handleSkinnedMinimize))
         minimizeHitZone.addGestureRecognizer(minimizeClick)
         let menuClick = NSClickGestureRecognizer(target: self, action: #selector(handleSkinnedMenu))
@@ -165,7 +178,9 @@ class MainPlayerView: NSView {
     }
 
     @objc private func handleSkinnedClose() { NSApp.terminate(nil) }
-    @objc private func handleSkinnedMaximize() { doubleSize() }
+    @objc private func handleSkinnedShade() {
+        isShaded.toggle()
+    }
     @objc private func handleSkinnedMinimize() { window?.miniaturize(nil) }
     @objc private func handleSkinnedMenu() { showWindowMenu() }
     @objc private func handleOpenGitHub() {
@@ -185,6 +200,14 @@ class MainPlayerView: NSView {
         ctx?.imageInterpolation = .none
         defer { if let prev = prev { ctx?.imageInterpolation = prev } }
 
+        if isShaded {
+            if let tb = WinampTheme.sprite(.titleShadedBar) {
+                tb.draw(in: bounds)
+            }
+            return
+        }
+        
+        
         // View is resized to 116 px (native main.bmp height) when skinned,
         // so the sprite fills bounds exactly and sub-sprite coordinates are
         // in the same space as Webamp's main-window.css.
@@ -192,11 +215,16 @@ class MainPlayerView: NSView {
         if let bg = WinampTheme.sprite(.mainBackground) {
             bg.draw(in: bounds)
         }
+        
 
         // Title bar overlay (main.bmp leaves the top 14px empty for this).
         // Webamp y=0..14 (top-down) → AppKit y = mainHeight - 14.
-        let isActive = window?.isKeyWindow ?? true
-        if let tb = WinampTheme.sprite(isActive ? .titleBarActive : .titleBarInactive) {
+//        let isActive = window?.isKeyWindow ?? true
+//        if let tb = WinampTheme.sprite(isActive ? .titleBarActive : .titleBarInactive) {
+//            tb.draw(in: NSRect(x: 0, y: mainHeight - 14, width: bounds.width, height: 14))
+//        }
+        // alwys draw active titlebar
+        if let tb = WinampTheme.sprite(.titleBarActive) {
             tb.draw(in: NSRect(x: 0, y: mainHeight - 14, width: bounds.width, height: 14))
         }
 
@@ -238,33 +266,57 @@ class MainPlayerView: NSView {
 
     override func layout() {
         super.layout()
-        layoutSkinned()
+        layoutTitleHitZones()
+        if isShaded {
+            layoutShaded()
+        } else {
+            layoutSkinned()
+        }
         audioEngine?.maxSpectrumBars = 19
+    }
+    
+    private func layoutTitleHitZones() {
+        let h = bounds.height                 // 116 or 14
+        let hitSize: CGFloat = 10
+        let hitY = h - 2 - hitSize
+        closeHitZone.frame    = NSRect(x: 264, y: hitY, width: hitSize, height: hitSize)
+        shadedHitZone.frame   = NSRect(x: 254, y: hitY, width: hitSize, height: hitSize)
+        minimizeHitZone.frame = NSRect(x: 244, y: hitY, width: hitSize, height: hitSize)
+        menuHitZone.frame     = NSRect(x: 6,   y: hitY, width: hitSize, height: hitSize)
+        titleBar.frame = NSRect(x: 0, y: h - 14, width: bounds.width, height: 14)
+    }
+    
+    private func layoutShaded() {
+        bodyViews.forEach { $0.isHidden = true }
+        playIndicator.isHidden = true
+        titleBar.isHidden = true
     }
 
     /// Exact Winamp 2.x pixel coordinates, ported from Webamp's main-window.css.
     /// View bounds are 275×116 in this mode; Y is converted from Webamp (top-down)
     /// to AppKit (bottom-up) as: y_appkit = 116 - y_webamp - height.
     private func layoutSkinned() {
-        let h: CGFloat = bounds.height  // 116
+        // let h: CGFloat = bounds.height  // 116
 
+        bodyViews.forEach { $0.isHidden = false }
+        
         // FIXME: implement play state sprites
         playIndicator.isHidden = true
         
         titleBar.isHidden = true
         titleBar.showMenuIcon = false
         // Title bar (hidden, but keep frame valid)
-        titleBar.frame = NSRect(x: 0, y: h - 16, width: bounds.width, height: 16)
+//        titleBar.frame = NSRect(x: 0, y: h - 14, width: bounds.width, height: 14)
 
-        // Close / minimize hit-zones — webamp close(264,3,9×9), min(244,3,9×9)
-        let hitSize: CGFloat = 10
-        let hitY = h - 2 - hitSize
-        closeHitZone.frame = NSRect(x: 264, y: hitY, width: hitSize, height: hitSize)
-        maximizeHitZone.frame = NSRect(x: 254, y: hitY, width: hitSize, height: hitSize)
-        minimizeHitZone.frame = NSRect(x: 244, y: hitY, width: hitSize, height: hitSize)
-
-        // Menu icon hit-zone — webamp top-left icon at (6, 3, 9×9)
-        menuHitZone.frame = NSRect(x: 6, y: hitY, width: hitSize, height: hitSize)
+//        // Close / minimize hit-zones — webamp close(264,3,9×9), min(244,3,9×9)
+//        let hitSize: CGFloat = 10
+//        let hitY = h - 2 - hitSize
+//        closeHitZone.frame = NSRect(x: 264, y: hitY, width: hitSize, height: hitSize)
+//        shadedHitZone.frame = NSRect(x: 254, y: hitY, width: hitSize, height: hitSize)
+//        minimizeHitZone.frame = NSRect(x: 244, y: hitY, width: hitSize, height: hitSize)
+//
+//        // Menu icon hit-zone — webamp top-left icon at (6, 3, 9×9)
+//        menuHitZone.frame = NSRect(x: 6, y: hitY, width: hitSize, height: hitSize)
 
         // 7-segment time (webamp #time at 39,26,59,13 → y=77; widened 1px to fit last digit)
         timeDisplay.frame = NSRect(x: 39, y: 77, width: 60, height: 13)
@@ -517,7 +569,7 @@ class MainPlayerView: NSView {
         guard point.y >= titleBarMinY else { super.mouseDown(with: event); return }
         // Don't drag from close/minimize/menu hit-zones
         if closeHitZone.frame.contains(point) || minimizeHitZone.frame.contains(point)
-            || maximizeHitZone.frame.contains(point) || menuHitZone.frame.contains(point) {
+            || shadedHitZone.frame.contains(point) || menuHitZone.frame.contains(point) {
             super.mouseDown(with: event)
             return
         }
