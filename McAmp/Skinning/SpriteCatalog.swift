@@ -33,7 +33,10 @@ enum SpriteKey: Hashable {
 
     // EQ title bar (lives inside eqmain.bmp, not titlebar.bmp)
     case eqTitleBar(active: Bool)
+    // EQ shaded
     case eqShadedBar
+    case eqShadedVolume
+    case eqShadedBalance
 
     // posbar
     case seekBackground
@@ -138,6 +141,10 @@ enum SpriteCoordinates {
             return SpriteInfo(sheet: "eqmain", rect: CGRect(x: 0, y: active ? 134 : 149, width: 275, height: 14))
         case .eqShadedBar:
             return SpriteInfo(sheet: "eq_ex", rect: CGRect(x: 0, y: 0, width: 275, height: 14))
+        case .eqShadedVolume:
+            return SpriteInfo(sheet: "eq_ex", rect: CGRect(x: 4, y: 30, width: 3, height: 7))
+        case .eqShadedBalance:
+            return SpriteInfo(sheet: "eq_ex", rect: CGRect(x: 14, y: 30, width: 3, height: 7))
             
         // MARK: posbar
         case .seekBackground:

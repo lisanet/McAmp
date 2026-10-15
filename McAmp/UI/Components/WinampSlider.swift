@@ -4,7 +4,9 @@ import Combine
 enum WinampSliderStyle {
     case seek       // olive-green, horizontal
     case volume     // orange gradient, horizontal
+    case shadedVol  // volume in shaded mode
     case balance    // olive-green, horizontal
+    case shadedBal  // balance in shaded moder
     case eqBand     // vertical, yellow-tinted background
 }
 
@@ -83,7 +85,19 @@ class WinampSlider: NSView {
             if let thumb = WinampTheme.sprite(.volumeThumb(pressed: isUserInteracting)) {
                 thumb.draw(in: NSRect(x: thumbX, y: (bounds.height - 11) / 2, width: thumbW, height: 11))
             }
-
+            
+        case .shadedVol:
+            let position = (n * (bounds.width - 3)).rounded()
+            if let thumb = WinampTheme.sprite(.eqShadedVolume) {
+                thumb.draw(in: NSRect(x: position, y: 0, width: 3, height: 7))
+            }
+            
+        case .shadedBal:
+            let position = (n * (bounds.width - 3)).rounded()
+            if let thumb = WinampTheme.sprite(.eqShadedBalance) {
+                thumb.draw(in: NSRect(x: position, y: 0, width: 3, height: 7))
+            }
+            
         case .balance:
             let position = Int((n * 27).rounded())
             if let bg = WinampTheme.sprite(.balanceBackground(position: position)) {
@@ -118,7 +132,7 @@ class WinampSlider: NSView {
         // Reset-to-center only makes sense where the midpoint is neutral
         // (balance 0, EQ band 0 dB). On seek/volume a double-click would yank
         // playback to 50% / volume to half instead of honoring the click.
-        if event.clickCount == 2, style == .balance || style == .eqBand {
+        if event.clickCount == 2, style == .balance || style == .shadedBal || style == .eqBand {
             resetToCenter()
             return
         }

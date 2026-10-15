@@ -428,17 +428,32 @@ class MainPlayerView: NSView {
         }
 
         // Volume
-        volumeSlider.value = audioEngine.volume
         volumeSlider.onChange = { [weak self, weak audioEngine] value in
             audioEngine?.volume = value
             self?.lcdDisplay.showOverlay("Volume: \(Int(round(value * 100)))%")
         }
+        audioEngine.$volume
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] v in
+                guard let self, !self.volumeSlider.isUserInteracting else { return }
+                self.volumeSlider.value = v
+                self.lcdDisplay.showOverlay("Volume: \(Int(round(v * 100)))%")
+            }
+            .store(in: &cancellables)
 
         // Balance
-        balanceSlider.value = (audioEngine.balance + 1) / 2 // convert -1..1 to 0..1
         balanceSlider.onChange = { [weak audioEngine] value in
-            audioEngine?.balance = value * 2 - 1 // convert 0..1 to -1..1
+            audioEngine?.balance = value * 2 - 1          // 0..1 -> -1..1
         }
+        audioEngine.$balance
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] b in
+                guard let self, !self.balanceSlider.isUserInteracting else { return }
+                self.balanceSlider.value = (b + 1) / 2    // -1..1 -> 0..1
+            }
+            .store(in: &cancellables)
 
         // Transport
         transportBar.onPrevious = { [weak playlistManager] in playlistManager?.playPrevious() }

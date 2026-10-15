@@ -32,16 +32,17 @@ struct EQPreset {
 }
 
 class EqualizerView: NSView {
-    private let titleBar = TitleBarView()
     private let onButton = WinampButton(title: "ON", style: .toggle)
     private let autoButton = WinampButton(title: "AUTO", style: .toggle)
     private let presetsButton = WinampButton(title: "PRESETS", style: .action)
     private let preampSlider = WinampSlider(style: .eqBand, isVertical: true)
     private let responseView = EQResponseView()
     private var bandSliders: [WinampSlider] = []
-    
+    private let volumeSlider = WinampSlider(style: .shadedVol, isVertical: false)
+    private let balanceSlider = WinampSlider(style: .shadedBal, isVertical: false)
+ 
     private var bodyViews: [NSView] {
-        [onButton, autoButton, presetsButton, preampSlider, responseView] + bandSliders
+        [onButton, autoButton, presetsButton, preampSlider, responseView, volumeSlider, balanceSlider] + bandSliders
     }
     
     private var cancellables = Set<AnyCancellable>()
@@ -60,7 +61,7 @@ class EqualizerView: NSView {
             onShadeChanged?(isShaded)
         }
     }
-    
+
     var autoMode: Bool {
         get { autoButton.isActive }
         set { autoButton.isActive = newValue }
@@ -83,12 +84,16 @@ class EqualizerView: NSView {
     required init?(coder: NSCoder) { fatalError() }
 
     private func setupSubviews() {
-        // titleBar.titleText = "WAMP EQUALIZER"
-        addSubview(titleBar)
-
         addSubview(shadedHitZone)
         let shadedClick = NSClickGestureRecognizer(target: self, action: #selector(handleSkinnedShade))
         shadedHitZone.addGestureRecognizer(shadedClick)
+        
+        // shaded mode volume slider
+        volumeSlider.value = 0.75
+        addSubview(volumeSlider)
+        
+        balanceSlider.value = 0.5
+        addSubview(balanceSlider)
         
         onButton.isActive = true
         onButton.onClick = { [weak self] in
@@ -202,12 +207,14 @@ class EqualizerView: NSView {
         shadedHitZone.frame   = NSRect(x: 254, y: hitY, width: hitSize, height: hitSize)
         //minimizeHitZone.frame = NSRect(x: 244, y: hitY, width: hitSize, height: hitSize)
         //menuHitZone.frame     = NSRect(x: 6,   y: hitY, width: hitSize, height: hitSize)
-        titleBar.frame = NSRect(x: 0, y: h - 14, width: bounds.width, height: 14)
     }
     
     private func layoutShaded() {
         bodyViews.forEach { $0.isHidden = true }
-        titleBar.isHidden = true
+        volumeSlider.isHidden = false
+        balanceSlider.isHidden = false
+        volumeSlider.frame = NSRect(x: 61, y: 3, width: 97, height: 7)
+        balanceSlider.frame = NSRect(x: 164, y: 3, width: 42, height: 7)
     }
     
     /// Exact Webamp EQ pixel coordinates. View bounds are 275x116 when skinned.
@@ -215,11 +222,8 @@ class EqualizerView: NSView {
     private func layoutSkinned() {
  
         bodyViews.forEach { $0.isHidden = false }
-        
-        titleBar.isHidden = true
-        titleBar.showButtons = false
-        // Title bar (hidden but keep frame valid)
-        // titleBar.frame = NSRect(x: 0, y: h - 14, width: bounds.width, height: 14)
+        volumeSlider.isHidden = true
+        balanceSlider.isHidden = true
 
         // ON button: webamp (14, 18, 26, 12) → y = 116-18-12 = 86
         onButton.frame = NSRect(x: 14, y: 86, width: 26, height: 12)
@@ -250,6 +254,31 @@ class EqualizerView: NSView {
         preampSlider.value = audioEngine.preampGain
         responseView.bands = audioEngine.eqBands
 
+        volumeSlider.onChange = { [weak audioEngine] value in
+            audioEngine?.volume = value
+        }
+        balanceSlider.onChange = { [weak audioEngine] value in
+            audioEngine?.balance = value * 2 - 1
+        }
+        
+        audioEngine.$volume
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] v in
+                guard let self, !self.volumeSlider.isUserInteracting else { return }
+                self.volumeSlider.value = v
+            }
+            .store(in: &cancellables)
+
+        audioEngine.$balance
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] b in
+                guard let self, !self.balanceSlider.isUserInteracting else { return }
+                self.balanceSlider.value = (b + 1) / 2
+            }
+            .store(in: &cancellables)
+        
         audioEngine.$eqEnabled
             .receive(on: DispatchQueue.main)
             .sink { [weak self] enabled in self?.onButton.isActive = enabled }
