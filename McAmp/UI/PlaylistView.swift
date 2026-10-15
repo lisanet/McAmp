@@ -10,6 +10,10 @@ class PlaylistView: NSView {
     private let tableView = PlaylistTableView()
     private let skinScroller = PlaylistSkinScroller()
 
+    private var bodyViews: [NSView] {
+            [scrollView, tableView, skinScroller]
+    }
+    
     private var cancellables = Set<AnyCancellable>()
     private var skinObserver: AnyCancellable?
     private weak var playlistManager: PlaylistManager?
@@ -20,8 +24,9 @@ class PlaylistView: NSView {
     private var resizeStart: (mouse: NSPoint, width: CGFloat, height: CGFloat, scale: CGFloat)?
     private var compositeSize: NSSize = .zero
     private var compositeActive = true
+    private var shadedSize: NSSize = .zero
     private var logicalWidth: CGFloat = WinampTheme.windowWidth
-    private var logicalHeight: CGFloat = WinampTheme.playlistMinHeight
+    var logicalHeight: CGFloat = WinampTheme.playlistMinHeight
     func updateLogicalSize(width: CGFloat, height: CGFloat) {
         logicalWidth = width
         logicalHeight = height
@@ -42,6 +47,16 @@ class PlaylistView: NSView {
     var onTitleBarDragEnded: ((NSPoint) -> Void)?
     private var dockingDragActive = false
     
+    private let shadedHitZone = HitZone()
+    var onShadeChanged: ((Bool) -> Void)?
+    var isShaded: Bool = false {
+        didSet {
+            guard isShaded != oldValue else { return }
+            onShadeChanged?(isShaded)
+        }
+    }
+    
+
     override init(frame: NSRect) {
         super.init(frame: frame)
         wantsLayer = true
@@ -58,6 +73,10 @@ class PlaylistView: NSView {
         titleBar.titleText = "McAmp PLAYLIST"
         titleBar.showButtons = false
         addSubview(titleBar)
+
+        addSubview(shadedHitZone)
+        let shadedClick = NSClickGestureRecognizer(target: self, action: #selector(handleSkinnedShade))
+        shadedHitZone.addGestureRecognizer(shadedClick)
 
         // Table view
         let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("track"))
@@ -109,6 +128,10 @@ class PlaylistView: NSView {
         needsLayout = true
     }
 
+    @objc private func handleSkinnedShade() {
+        isShaded.toggle()
+    }
+    
     private func applySkinVisibility() {
         tableView.backgroundColor = WinampTheme.provider.playlistStyle.normalBG
         scrollView.backgroundColor = tableView.backgroundColor
@@ -181,6 +204,37 @@ class PlaylistView: NSView {
         return result
     }
     
+    private func drawShaded() -> NSImage? {
+        func tileDraw(_ tile: NSImage, x: CGFloat, y: CGFloat) {
+            tile.draw(at: NSPoint(x: x, y: y), from: .zero, operation: .sourceOver, fraction: 1)
+        }
+        let requestedSize = NSSize(width: logicalWidth, height: 14)
+        if let cached = WinampTheme.plvShadedImage,
+            shadedSize == requestedSize { return cached }
+
+        guard
+            let tl = WinampTheme.sprite(.playlistShadedLeft),
+            let tr = WinampTheme.sprite(.playlistShadedRight),
+            let ttile = WinampTheme.sprite(.playlistShadedTile) else { return nil }
+
+        let w = logicalWidth
+        let result = NSImage(size: NSSize(width: w, height: 14))
+        result.lockFocus()
+        
+        tileDraw(tl, x: 0, y: 0)
+        var x: CGFloat = 25
+        while x < w {
+            tileDraw(ttile, x: x, y: 0)
+            x += 25
+        }
+        tileDraw(tr, x: w - 50, y: 0)
+        
+        result.unlockFocus()
+        WinampTheme.plvShadedImage = result
+        shadedSize = requestedSize
+        return result
+    }
+    
     private func drawSkinned() {
         let ctx = NSGraphicsContext.current
         let prevInterp = ctx?.imageInterpolation
@@ -194,6 +248,13 @@ class PlaylistView: NSView {
 
         let w = bounds.width
     
+        if isShaded {
+            if let shadedBar = drawShaded() {
+                shadedBar.draw(in: bounds)
+            }
+            return
+        }
+        
         if let composite = compositePLVBackground() {
             composite.draw(in: bounds)
         }
@@ -222,9 +283,32 @@ class PlaylistView: NSView {
 
     override func layout() {
         super.layout()
-        layoutSkinned()
+        layoutTitleHitZones()
+        if isShaded {
+            layoutShaded()
+        } else {
+            layoutSkinned()
+        }
     }
 
+    private func layoutTitleHitZones() {
+        let h = bounds.height
+        let w = bounds.width
+        let hitSize: CGFloat = 10
+        let hitY = h - 2 - hitSize
+        //closeHitZone.frame    = NSRect(x: 264, y: hitY, width: hitSize, height: hitSize)
+        // shadedHitZone.frame   = NSRect(x: 254, y: hitY, width: hitSize, height: hitSize)
+        shadedHitZone.frame   = NSRect(x: w - 21, y: hitY, width: hitSize, height: hitSize)
+        //minimizeHitZone.frame = NSRect(x: 244, y: hitY, width: hitSize, height: hitSize)
+        //menuHitZone.frame     = NSRect(x: 6,   y: hitY, width: hitSize, height: hitSize)
+        titleBar.frame = NSRect(x: 0, y: h - 14, width: bounds.width, height: 14)
+    }
+    
+    private func layoutShaded() {
+        bodyViews.forEach { $0.isHidden = true }
+        titleBar.isHidden = true
+    }
+    
     /// Classic-Winamp pledit frame layout: 20px title bar at top, 38px bottom
     /// corner strip (ADD/REM baked in), 12px left tile, 20px right tile.
     /// The track list fills the middle.
@@ -236,6 +320,8 @@ class PlaylistView: NSView {
         let leftW: CGFloat = 12
         let rightW: CGFloat = 20
 
+        bodyViews.forEach { $0.isHidden = false }
+        
         // maybe we need it later
         titleBar.isHidden = true
         titleBar.frame = NSRect(x: 0, y: h - 14, width: w, height: 14)
@@ -556,6 +642,12 @@ class PlaylistView: NSView {
     
     override func mouseDown(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
+
+        // Don't drag from close/minimize/menu hit-zones
+        if shadedHitZone.frame.contains(point) {
+            super.mouseDown(with: event)
+            return
+        }
 
         if resizeHandleRect.contains(point), let begin = onResizeBegan {
             let initial = begin()

@@ -28,11 +28,15 @@ class MainWindow: NSWindow {
     private var cancellables = Set<AnyCancellable>()
     private weak var audioEngine: AudioEngine?
     private(set) var playlistLogicalWidth = WinampTheme.windowWidth
-    private(set) var playlistLogicalHeight = WinampTheme.playlistMinHeight
+    private var playlistLogicalHeight = WinampTheme.playlistMinHeight
+    private var normalLogicalHeight = WinampTheme.playlistMinHeight
     private var playlistContainer: NSView?
     private var appliedWindowScale = WinampTheme.scale
     private var mainLogicalHeight: CGFloat {
-        mainPlayerView.isShaded ? WinampTheme.mainShadedHeight : WinampTheme.mainPlayerHeight
+        mainPlayerView.isShaded ? WinampTheme.shadedHeight : WinampTheme.mainPlayerHeight
+    }
+    private var eqLogicalHeight: CGFloat {
+        equalizerView.isShaded ? WinampTheme.shadedHeight : WinampTheme.equalizerHeight
     }
     
     private func applyPlaylistGeometry(keepingTopLeft: Bool) {
@@ -59,20 +63,38 @@ class MainWindow: NSWindow {
         applyPlaylistGeometry(keepingTopLeft: true)
     }
 
-    private func applyMainShadeState() {
+    private func applyShadeState(id: DockWindowID, window: NSWindow, view: NSView, logicalHeight: CGFloat) {
         let scale = WinampTheme.scale
-        let height = mainLogicalHeight
         let size = NSSize(width: (WinampTheme.windowWidth * scale).rounded(),
-                          height: (height * scale).rounded())
-        dockingController.resizeKeepingTopLeft(.main, to: size)
+                          height: (logicalHeight * scale).rounded())
+        dockingController.resizeKeepingTopLeft(id, to: size)
 
-        if let container = contentView {
-            container.setBoundsSize(NSSize(width: WinampTheme.windowWidth, height: height))
-            mainPlayerView.frame = container.bounds
+        if let container = window.contentView {
+            container.setBoundsSize(NSSize(width: WinampTheme.windowWidth, height: logicalHeight))
+            view.frame = container.bounds
         }
-        mainPlayerView.needsLayout = true
-        mainPlayerView.needsDisplay = true
+        view.needsLayout = true
+        view.needsDisplay = true
+    }
+
+    private func applyMainShadeState() {
+        applyShadeState(id: .main, window: self, view: mainPlayerView, logicalHeight: mainLogicalHeight)
         applyRegionMaskFromCurrentSkin()
+    }
+
+    private func applyEqShadeState() {
+        applyShadeState(id: .equalizer, window: equalizerWindow, view: equalizerView, logicalHeight: eqLogicalHeight)
+    }
+    
+    private func applyPlaylistShadeState() {
+        if playlistView.isShaded {
+            normalLogicalHeight = playlistLogicalHeight
+            playlistLogicalHeight = 14
+        } else {
+            playlistLogicalHeight = normalLogicalHeight
+        }
+        applyShadeState(id: .playlist, window: playlistWindow, view: playlistView, logicalHeight: playlistLogicalHeight)
+        applyAllWindowScales()
     }
     
     private func applyAllWindowScales() {
@@ -80,8 +102,8 @@ class MainWindow: NSWindow {
         let previousScale = appliedWindowScale
         let scale = WinampTheme.scale
         for (window, view, width, height) in [
-            (self as NSWindow, mainPlayerView as NSView, WinampTheme.windowWidth, WinampTheme.mainShadedHeight),
-            (equalizerWindow as NSWindow, equalizerView as NSView, WinampTheme.windowWidth, WinampTheme.equalizerHeight)
+            (self as NSWindow, mainPlayerView as NSView, WinampTheme.windowWidth, mainLogicalHeight),
+            (equalizerWindow as NSWindow, equalizerView as NSView, WinampTheme.windowWidth, eqLogicalHeight)
         ] {
             let old = window.frame
             let size = NSSize(width: (width * scale).rounded(), height: (height * scale).rounded())
@@ -200,6 +222,8 @@ class MainWindow: NSWindow {
         wireDragging()
 
         mainPlayerView.onShadeChanged = { [weak self] _ in self?.applyMainShadeState() }
+        equalizerView.onShadeChanged = { [weak self] _ in self?.applyEqShadeState() }
+        playlistView.onShadeChanged = { [weak self] _ in self?.applyPlaylistShadeState() }
         
         // Initial classic Winamp stack: MAIN -> EQ -> PLAYLIST.
         dockingController.dock(.equalizer, to: .main)

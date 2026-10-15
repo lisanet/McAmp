@@ -82,7 +82,7 @@ enum SkinParserUtils {
         let sheetBaseNames = [
             "main", "titlebar", "cbuttons", "numbers",
             "playpaus", "monoster", "posbar", "volume", "balance",
-            "shufrep", "eqmain", "pledit", "text",
+            "shufrep", "eqmain", "pledit", "text", "eq_ex",
         ]
         var images: [String: CGImage] = [:]
         for name in sheetBaseNames {

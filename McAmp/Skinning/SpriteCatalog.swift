@@ -33,6 +33,7 @@ enum SpriteKey: Hashable {
 
     // EQ title bar (lives inside eqmain.bmp, not titlebar.bmp)
     case eqTitleBar(active: Bool)
+    case eqShadedBar
 
     // posbar
     case seekBackground
@@ -77,6 +78,9 @@ enum SpriteKey: Hashable {
     case playlistRemoveAll(pressed: Bool)
     case playlistSelectAll(pressed: Bool)
     case playlistMiscOpts(pressed: Bool)
+    case playlistShadedLeft
+    case playlistShadedTile
+    case playlistShadedRight
 }
 
 struct SpriteInfo {
@@ -126,14 +130,15 @@ enum SpriteCoordinates {
             return SpriteInfo(sheet: "titlebar", rect: CGRect(x: 18, y: pressed ? 9 : 0, width: 9, height: 9))
         case .titleBarShadeButton(let pressed):
             return SpriteInfo(sheet: "titlebar", rect: CGRect(x:  0, y: pressed ? 27 : 18, width: 9, height: 9))
-
         case .titleShadedBar:
             return SpriteInfo(sheet: "titlebar", rect: CGRect(x: 27, y: 29, width: 275, height: 14))
             
         // MARK: eq titlebar — lives inside eqmain.bmp
         case .eqTitleBar(let active):
             return SpriteInfo(sheet: "eqmain", rect: CGRect(x: 0, y: active ? 134 : 149, width: 275, height: 14))
-
+        case .eqShadedBar:
+            return SpriteInfo(sheet: "eq_ex", rect: CGRect(x: 0, y: 0, width: 275, height: 14))
+            
         // MARK: posbar
         case .seekBackground:
             return SpriteInfo(sheet: "posbar", rect: CGRect(x: 0, y: 0, width: 248, height: 10))
@@ -243,6 +248,12 @@ enum SpriteCoordinates {
             return SpriteInfo(sheet: "pledit", rect: CGRect(x: p ? 23 : 0, y: 111, width: 22, height: 18))
         case .playlistMiscOpts(let p):
             return SpriteInfo(sheet: "pledit", rect: CGRect(x: p ? 23 : 0, y: 130, width: 22, height: 18))
+        case .playlistShadedLeft:
+            return SpriteInfo(sheet: "pledit", rect: CGRect(x: 72, y: 42, width: 25, height: 14))
+        case .playlistShadedTile:
+            return SpriteInfo(sheet: "pledit", rect: CGRect(x: 72, y: 57, width: 25, height: 14))
+        case .playlistShadedRight:
+            return SpriteInfo(sheet: "pledit", rect: CGRect(x: 99, y: 42, width: 50, height: 14))
         }
     }
 }

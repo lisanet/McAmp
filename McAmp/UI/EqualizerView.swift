@@ -39,6 +39,11 @@ class EqualizerView: NSView {
     private let preampSlider = WinampSlider(style: .eqBand, isVertical: true)
     private let responseView = EQResponseView()
     private var bandSliders: [WinampSlider] = []
+    
+    private var bodyViews: [NSView] {
+        [onButton, autoButton, presetsButton, preampSlider, responseView] + bandSliders
+    }
+    
     private var cancellables = Set<AnyCancellable>()
     private var skinObserver: AnyCancellable?
     private weak var audioEngine: AudioEngine?
@@ -47,6 +52,15 @@ class EqualizerView: NSView {
     var onTitleBarDragChanged: ((NSPoint) -> Void)?
     var onTitleBarDragEnded: ((NSPoint) -> Void)?
 
+    private let shadedHitZone = HitZone()
+    var onShadeChanged: ((Bool) -> Void)?
+    var isShaded: Bool = false {
+        didSet {
+            guard isShaded != oldValue else { return }
+            onShadeChanged?(isShaded)
+        }
+    }
+    
     var autoMode: Bool {
         get { autoButton.isActive }
         set { autoButton.isActive = newValue }
@@ -72,6 +86,10 @@ class EqualizerView: NSView {
         // titleBar.titleText = "WAMP EQUALIZER"
         addSubview(titleBar)
 
+        addSubview(shadedHitZone)
+        let shadedClick = NSClickGestureRecognizer(target: self, action: #selector(handleSkinnedShade))
+        shadedHitZone.addGestureRecognizer(shadedClick)
+        
         onButton.isActive = true
         onButton.onClick = { [weak self] in
             guard let engine = self?.audioEngine else { return }
@@ -118,6 +136,10 @@ class EqualizerView: NSView {
         presetsButton.spriteKeyProvider = { _, pressed in .eqPresetsButton(pressed: pressed) }
     }
 
+    @objc private func handleSkinnedShade() {
+        isShaded.toggle()
+    }
+    
     /// Hides freq/dB/PRE/dB-unit labels and the title bar when a skin is loaded.
     /// All these labels are baked into eqmain.bmp; the title bar is replaced by
     /// the eqmain title strip.
@@ -144,6 +166,13 @@ class EqualizerView: NSView {
         ctx?.imageInterpolation = .none
         defer { if let prev = prev { ctx?.imageInterpolation = prev } }
 
+        if isShaded {
+            if let tb = WinampTheme.sprite(.eqShadedBar) {
+                tb.draw(in: bounds)
+            }
+            return
+        }
+        
         if let composite = compositeEqBackground() {
             composite.draw(in: bounds)
         }
@@ -157,18 +186,40 @@ class EqualizerView: NSView {
 
     override func layout() {
         super.layout()
-        layoutSkinned()
+        layoutTitleHitZones()
+        if isShaded {
+            layoutShaded()
+        } else {
+            layoutSkinned()
+        }
     }
 
+    private func layoutTitleHitZones() {
+        let h = bounds.height                 // 116 or 14
+        let hitSize: CGFloat = 10
+        let hitY = h - 2 - hitSize
+        //closeHitZone.frame    = NSRect(x: 264, y: hitY, width: hitSize, height: hitSize)
+        shadedHitZone.frame   = NSRect(x: 254, y: hitY, width: hitSize, height: hitSize)
+        //minimizeHitZone.frame = NSRect(x: 244, y: hitY, width: hitSize, height: hitSize)
+        //menuHitZone.frame     = NSRect(x: 6,   y: hitY, width: hitSize, height: hitSize)
+        titleBar.frame = NSRect(x: 0, y: h - 14, width: bounds.width, height: 14)
+    }
+    
+    private func layoutShaded() {
+        bodyViews.forEach { $0.isHidden = true }
+        titleBar.isHidden = true
+    }
+    
     /// Exact Webamp EQ pixel coordinates. View bounds are 275x116 when skinned.
     /// Y converted from Webamp top-down to AppKit bottom-up: y = 116 - y_webamp - h.
     private func layoutSkinned() {
-        let h: CGFloat = bounds.height  // 116
-
+ 
+        bodyViews.forEach { $0.isHidden = false }
+        
         titleBar.isHidden = true
         titleBar.showButtons = false
         // Title bar (hidden but keep frame valid)
-        titleBar.frame = NSRect(x: 0, y: h - 14, width: bounds.width, height: 14)
+        // titleBar.frame = NSRect(x: 0, y: h - 14, width: bounds.width, height: 14)
 
         // ON button: webamp (14, 18, 26, 12) → y = 116-18-12 = 86
         onButton.frame = NSRect(x: 14, y: 86, width: 26, height: 12)
@@ -354,6 +405,11 @@ class EqualizerView: NSView {
     override func mouseDown(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
         guard point.y >= bounds.height - 14 else { super.mouseDown(with: event); return }
+        // Don't drag from close/minimize/menu hit-zones
+        if shadedHitZone.frame.contains(point) {
+            super.mouseDown(with: event)
+            return
+        }
         dragOrigin = event.locationInWindow
         onTitleBarDragBegan?(NSEvent.mouseLocation)
     }

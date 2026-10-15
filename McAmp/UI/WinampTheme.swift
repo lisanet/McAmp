@@ -28,8 +28,8 @@ final class WinampTheme {
 
     // MARK: - Dimensions
     static let windowWidth: CGFloat = 275
+    static let shadedHeight: CGFloat = 14
     static let mainPlayerHeight: CGFloat = 116
-    static let mainShadedHeight: CGFloat = 14
     static let equalizerHeight: CGFloat = 116
     static let playlistMinHeight: CGFloat = 232
     static let titleBarHeight: CGFloat = 16
@@ -38,11 +38,13 @@ final class WinampTheme {
     // MARK: - Composite Images, prerenderd, avoids scaling artifacts
     static var eqCompositeImage: NSImage?
     static var plvCompositeImage: NSImage?
+    static var plvShadedImage: NSImage?
     static var scrollerCompositeImage: NSImage?
     
     static func invalidateCache() {
         eqCompositeImage = nil
         plvCompositeImage = nil
+        plvShadedImage = nil
         scrollerCompositeImage = nil
     }
 }
