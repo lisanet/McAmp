@@ -29,7 +29,9 @@ class MainWindow: NSWindow {
     private weak var audioEngine: AudioEngine?
     private(set) var playlistLogicalWidth = WinampTheme.windowWidth
     private var playlistLogicalHeight = WinampTheme.playlistMinHeight
-    private var normalLogicalHeight = WinampTheme.playlistMinHeight
+    private var playlistEffectiveHeight: CGFloat {
+        playlistView.isShaded ? WinampTheme.shadedHeight : playlistLogicalHeight
+    }
     private var playlistContainer: NSView?
     private var appliedWindowScale = WinampTheme.scale
     private var mainLogicalHeight: CGFloat {
@@ -41,16 +43,21 @@ class MainWindow: NSWindow {
     
     private func applyPlaylistGeometry(keepingTopLeft: Bool) {
         let scale = WinampTheme.scale
-        let old = playlistWindow.frame
+        let height = playlistEffectiveHeight
         let size = NSSize(width: (playlistLogicalWidth * scale).rounded(),
-                          height: (playlistLogicalHeight * scale).rounded())
-        let origin = NSPoint(x: old.minX, y: keepingTopLeft ? old.maxY - size.height : old.minY)
-        playlistWindow.setFrame(NSRect(origin: origin, size: size), display: true)
+                          height: (height * scale).rounded())
+        
+        if keepingTopLeft {
+                dockingController.resizeKeepingTopLeft(.playlist, to: size)
+            } else {
+                playlistWindow.setFrame(NSRect(origin: playlistWindow.frame.origin, size: size), display: false)
+            }
+
         if let container = playlistWindow.contentView {
             container.frame = NSRect(origin: .zero, size: size)
-            container.setBoundsSize(NSSize(width: playlistLogicalWidth, height: playlistLogicalHeight))
+            container.setBoundsSize(NSSize(width: playlistLogicalWidth, height: height))
             playlistView.frame = container.bounds
-            playlistView.updateLogicalSize(width: playlistLogicalWidth, height: playlistLogicalHeight)
+            playlistView.updateLogicalSize(width: playlistLogicalWidth, height: height)
             playlistView.needsLayout = true
             playlistView.needsDisplay = true
         }
@@ -87,14 +94,7 @@ class MainWindow: NSWindow {
     }
     
     private func applyPlaylistShadeState() {
-        if playlistView.isShaded {
-            normalLogicalHeight = playlistLogicalHeight
-            playlistLogicalHeight = 14
-        } else {
-            playlistLogicalHeight = normalLogicalHeight
-        }
-        applyShadeState(id: .playlist, window: playlistWindow, view: playlistView, logicalHeight: playlistLogicalHeight)
-        applyAllWindowScales()
+        applyPlaylistGeometry(keepingTopLeft: true)
     }
     
     private func applyAllWindowScales() {
@@ -241,6 +241,9 @@ class MainWindow: NSWindow {
 
     func captureDockLayout() -> DockLayoutState {
         var layout = dockingController.captureLayout()
+        layout.mainShaded = mainPlayerView.isShaded
+        layout.eqShaded = equalizerView.isShaded
+        layout.playlistShaded = playlistView.isShaded
         layout.playlistLogicalWidth = playlistLogicalWidth
         layout.playlistLogicalHeight = playlistLogicalHeight
         return layout
@@ -248,10 +251,18 @@ class MainWindow: NSWindow {
 
     @discardableResult
     func restoreDockLayout(_ layout: DockLayoutState) -> Bool {
-        if let width = layout.playlistLogicalWidth, let height = layout.playlistLogicalHeight {
-            setPlaylistLogicalSize(width: width, height: height)
-        }
-        return dockingController.restoreLayout(layout)
+         if let w = layout.playlistLogicalWidth { playlistLogicalWidth = w }
+         if let h = layout.playlistLogicalHeight { playlistLogicalHeight = h }
+
+         mainPlayerView.isShaded = layout.mainShaded
+         equalizerView.isShaded = layout.eqShaded
+         playlistView.isShaded = layout.playlistShaded
+
+         applyMainShadeState()
+         applyEqShadeState()
+         applyPlaylistGeometry(keepingTopLeft: true)
+
+         return dockingController.restoreLayout(layout)
     }
 
     private func install(view: NSView, in window: NSWindow, logicalHeight: CGFloat) {

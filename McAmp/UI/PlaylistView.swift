@@ -649,7 +649,7 @@ class PlaylistView: NSView {
             return
         }
 
-        if resizeHandleRect.contains(point), let begin = onResizeBegan {
+        if !isShaded, resizeHandleRect.contains(point), let begin = onResizeBegan {
             let initial = begin()
             resizeStart = (NSEvent.mouseLocation, initial.0, initial.1, initial.2)
             return
@@ -666,7 +666,7 @@ class PlaylistView: NSView {
 
         // Bottom button strip — baked pledit.bmp sprites for ADD/REM/SEL/MISC
         // on the left, LIST OPTS + mini-transport on the right.
-        if point.y < 38 {
+        if !isShaded, point.y < 38 {
             if Self.skinnedAddRect.contains(point)  { showAddMenu(); return }
             if Self.skinnedRemRect.contains(point)  { showRemMenu(); return }
             if Self.skinnedSelRect.contains(point)  { showSelMenu(); return }

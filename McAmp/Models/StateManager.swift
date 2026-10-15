@@ -9,8 +9,11 @@ struct DockPoint: Codable {
 
 struct DockLayoutState: Codable {
     var main: DockPoint?
+    var mainShaded: Bool = false
     var equalizer: DockPoint?
+    var eqShaded: Bool = false
     var playlist: DockPoint?
+    var playlistShaded: Bool = false
     var equalizerParent: String?
     var playlistParent: String?
     var playlistLogicalWidth: CGFloat?
@@ -113,7 +116,14 @@ class StateManager {
         write(trackData, to: "playlist.json")
     }
 
-    func saveWindowState(x: Double, y: Double, showEQ: Bool, showPlaylist: Bool, alwaysOnTop: Bool, autoPlay: Bool, audioEngine: AudioEngine, playlistManager: PlaylistManager, dockLayout: DockLayoutState? = nil) {
+    func saveWindowState(x: Double, y: Double,
+                         showEQ: Bool,
+                         showPlaylist: Bool,
+                         alwaysOnTop: Bool,
+                         autoPlay: Bool,
+                         audioEngine: AudioEngine,
+                         playlistManager: PlaylistManager,
+                         dockLayout: DockLayoutState? = nil) {
         var state = loadAppState()
         state.windowX = x
         state.windowY = y
