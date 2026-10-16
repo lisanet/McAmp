@@ -5,10 +5,10 @@ import UniformTypeIdentifiers
 class PlaylistView: NSView {
     private static let internalRowType = NSPasteboard.PasteboardType("com.winampmac.playlist.row")
 
-    private let titleBar = TitleBarView()
     private let scrollView = AlwaysVisibleScrollView()
     private let tableView = PlaylistTableView()
     private let skinScroller = PlaylistSkinScroller()
+    private let shadedLCD = LCDDisplay()
 
     private var bodyViews: [NSView] {
             [scrollView, tableView, skinScroller]
@@ -32,7 +32,10 @@ class PlaylistView: NSView {
         logicalHeight = height
         WinampTheme.plvCompositeImage = nil
     }
-
+    var nowPlayingText: String = "" {
+        didSet { shadedLCD.text = nowPlayingText }
+    }
+    
     // Set by MainWindow.bindToModels / AppDelegate. Baked into pledit.bmp's
     // BR corner; mirrors classic Winamp's playlist-local transport row.
     var onMiniPrev:  (() -> Void)?
@@ -70,13 +73,11 @@ class PlaylistView: NSView {
     required init?(coder: NSCoder) { fatalError() }
 
     private func setupSubviews() {
-        titleBar.titleText = "McAmp PLAYLIST"
-        titleBar.showButtons = false
-        addSubview(titleBar)
-
         addSubview(shadedHitZone)
         let shadedClick = NSClickGestureRecognizer(target: self, action: #selector(handleSkinnedShade))
         shadedHitZone.addGestureRecognizer(shadedClick)
+        
+        addSubview(shadedLCD)
 
         // Table view
         let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("track"))
@@ -147,8 +148,7 @@ class PlaylistView: NSView {
         func tileDraw(_ tile: NSImage, x: CGFloat, y: CGFloat) {
             tile.draw(at: NSPoint(x: x, y: y), from: .zero, operation: .sourceOver, fraction: 1)
         }
-        
-        
+
         let isActive = window?.isKeyWindow ?? true
         let requestedSize = NSSize(width: logicalWidth, height: logicalHeight)
         if let cached = WinampTheme.plvCompositeImage,
@@ -165,7 +165,6 @@ class PlaylistView: NSView {
             let bl = WinampTheme.sprite(.playlistBottomLeftCorner),
             let bt = WinampTheme.sprite(.playlistBottomTile),
             let br = WinampTheme.sprite(.playlistBottomRightCorner) else { return nil }
-        
 
         let w = logicalWidth
         let h = logicalHeight
@@ -247,7 +246,6 @@ class PlaylistView: NSView {
         }
 
         let w = bounds.width
-    
         if isShaded {
             if let shadedBar = drawShaded() {
                 shadedBar.draw(in: bounds)
@@ -301,12 +299,14 @@ class PlaylistView: NSView {
         shadedHitZone.frame   = NSRect(x: w - 21, y: hitY, width: hitSize, height: hitSize)
         //minimizeHitZone.frame = NSRect(x: 244, y: hitY, width: hitSize, height: hitSize)
         //menuHitZone.frame     = NSRect(x: 6,   y: hitY, width: hitSize, height: hitSize)
-        titleBar.frame = NSRect(x: 0, y: h - 14, width: bounds.width, height: 14)
     }
     
     private func layoutShaded() {
         bodyViews.forEach { $0.isHidden = true }
-        titleBar.isHidden = true
+        let rightReserved: CGFloat = 30
+        shadedLCD.frame = NSRect(x: 5, y: 0,width: max(0, bounds.width - 5 - rightReserved), height: bounds.height)
+        shadedLCD.isScrolling = true
+        shadedLCD.isHidden = false
     }
     
     /// Classic-Winamp pledit frame layout: 20px title bar at top, 38px bottom
@@ -321,11 +321,9 @@ class PlaylistView: NSView {
         let rightW: CGFloat = 20
 
         bodyViews.forEach { $0.isHidden = false }
-        
-        // maybe we need it later
-        titleBar.isHidden = true
-        titleBar.frame = NSRect(x: 0, y: h - 14, width: w, height: 14)
- 
+        shadedLCD.isScrolling = false
+        shadedLCD.isHidden = true
+         
         scrollView.frame = NSRect(
             x: leftW,
             y: bottomH,

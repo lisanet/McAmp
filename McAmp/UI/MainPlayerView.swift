@@ -31,7 +31,6 @@ class MainPlayerView: NSView {
     }
     
     // Subviews
-    private let titleBar = TitleBarView()
     private let timeDisplay = SevenSegmentView()
     private let spectrumView = SpectrumView()
     private let lcdDisplay = LCDDisplay()
@@ -56,7 +55,7 @@ class MainPlayerView: NSView {
          transportBar, shuffleButton, repeatButton, eqButton, plButton, githubHitZone]
     }
     
-    // Invisible click hit-zones for close/minimize/menu when skinned (replace hidden titleBar)
+    // Invisible click hit-zones for close/minimize/menu when skinned
     private let closeHitZone = HitZone()
     private let shadedHitZone = HitZone()
     private let minimizeHitZone = HitZone()
@@ -70,7 +69,6 @@ class MainPlayerView: NSView {
     private var radioClockTimer: Timer?
     private var lastRadioClockMinute: Int?
 
-    // Window dragging state for skinned mode (titleBar is hidden)
     private var dragOrigin: NSPoint?
     var onTitleBarDragBegan: ((NSPoint) -> Void)?
     var onTitleBarDragChanged: ((NSPoint) -> Void)?
@@ -91,14 +89,6 @@ class MainPlayerView: NSView {
     required init?(coder: NSCoder) { fatalError() }
 
     private func setupSubviews() {
-        // Title bar
-        // titleBar.titleText = "WAMP"
-        // titleBar.showButtons = true
-        // titleBar.onClose = { NSApp.terminate(nil) }
-        // titleBar.onMinimize = { [weak self] in self?.window?.miniaturize(nil) }
-        // titleBar.onMenuClick = { [weak self] in self?.showWindowMenu() }
-        addSubview(titleBar)
-
         // Time display
         timeDisplay.wantsLayer = true
         addSubview(timeDisplay)
@@ -157,7 +147,7 @@ class MainPlayerView: NSView {
         eqButton.onClick = { [weak self] in self?.onToggleEQ?() }
         plButton.onClick = { [weak self] in self?.onTogglePL?() }
 
-        // Click hit-zones for close/minimize/menu when skinned (titleBar is hidden
+        // Click hit-zones for close/minimize/menu when skinned
         // then, so we need invisible NSViews at the locations where main.bmp paints
         // these buttons so the user can still interact with them).
         addSubview(closeHitZone)
@@ -283,40 +273,21 @@ class MainPlayerView: NSView {
         shadedHitZone.frame   = NSRect(x: 254, y: hitY, width: hitSize, height: hitSize)
         minimizeHitZone.frame = NSRect(x: 244, y: hitY, width: hitSize, height: hitSize)
         menuHitZone.frame     = NSRect(x: 6,   y: hitY, width: hitSize, height: hitSize)
-        titleBar.frame = NSRect(x: 0, y: h - 14, width: bounds.width, height: 14)
     }
     
     private func layoutShaded() {
         bodyViews.forEach { $0.isHidden = true }
         playIndicator.isHidden = true
-        titleBar.isHidden = true
     }
 
     /// Exact Winamp 2.x pixel coordinates, ported from Webamp's main-window.css.
     /// View bounds are 275×116 in this mode; Y is converted from Webamp (top-down)
     /// to AppKit (bottom-up) as: y_appkit = 116 - y_webamp - height.
     private func layoutSkinned() {
-        // let h: CGFloat = bounds.height  // 116
-
         bodyViews.forEach { $0.isHidden = false }
         
         // FIXME: implement play state sprites
         playIndicator.isHidden = true
-        
-        titleBar.isHidden = true
-        titleBar.showMenuIcon = false
-        // Title bar (hidden, but keep frame valid)
-//        titleBar.frame = NSRect(x: 0, y: h - 14, width: bounds.width, height: 14)
-
-//        // Close / minimize hit-zones — webamp close(264,3,9×9), min(244,3,9×9)
-//        let hitSize: CGFloat = 10
-//        let hitY = h - 2 - hitSize
-//        closeHitZone.frame = NSRect(x: 264, y: hitY, width: hitSize, height: hitSize)
-//        shadedHitZone.frame = NSRect(x: 254, y: hitY, width: hitSize, height: hitSize)
-//        minimizeHitZone.frame = NSRect(x: 244, y: hitY, width: hitSize, height: hitSize)
-//
-//        // Menu icon hit-zone — webamp top-left icon at (6, 3, 9×9)
-//        menuHitZone.frame = NSRect(x: 6, y: hitY, width: hitSize, height: hitSize)
 
         // 7-segment time (webamp #time at 39,26,59,13 → y=77; widened 1px to fit last digit)
         timeDisplay.frame = NSRect(x: 39, y: 77, width: 60, height: 13)
@@ -508,24 +479,21 @@ class MainPlayerView: NSView {
         guard let track = playlistManager?.currentTrack else {
             return
         }
+        
+        let index = (playlistManager?.currentIndex ?? 0) + 1
 
+        var newText: String
         if (audioEngine?.isRadioStream == true) || track.isStream {
-            let streamDisplay: String
             if let engine = audioEngine, engine.isRadioStream {
-                streamDisplay = !engine.radioDisplayTitle.isEmpty ? engine.radioDisplayTitle : track.title
+                newText = !engine.radioDisplayTitle.isEmpty ? engine.radioDisplayTitle : track.title
             } else {
-                streamDisplay = track.displayTitle
-            }
-            let newText = "\(streamDisplay)"
-            if lcdDisplay.text != newText {
-                lcdDisplay.text = newText
+                newText = track.displayTitle
             }
         } else {
-            let newText = "\(track.displayTitle) (\(track.formattedDuration))"
-            if lcdDisplay.text != newText {
-                lcdDisplay.text = newText
-            }
+            newText = "\(track.displayTitle) (\(track.formattedDuration))"
         }
+        if lcdDisplay.text != newText { lcdDisplay.text = newText }
+        playlistView?.nowPlayingText = "\(index). \(newText)"
     }
 
     private func doubleSize() {
@@ -536,7 +504,7 @@ class MainPlayerView: NSView {
     private func showWindowMenu() {
         guard let delegate = NSApp.delegate as? AppDelegate else { return }
         let menu = delegate.buildCornerPopupMenu()
-        let anchor = NSPoint(x: titleBar.frame.minX, y: titleBar.frame.minY)
+        let anchor = NSPoint(x: 0, y: bounds.height - 18)
         menu.popUp(positioning: nil, at: anchor, in: self)
     }
 
@@ -571,8 +539,6 @@ class MainPlayerView: NSView {
     }
 
     // MARK: - Mouse / Window dragging (skinned mode)
-    // When skinned, TitleBarView is hidden so we handle dragging from the title
-    // bar area (top 14px of the 116px skin) directly in MainPlayerView.
 
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
         return true
