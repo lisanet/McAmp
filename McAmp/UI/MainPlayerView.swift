@@ -481,8 +481,6 @@ class MainPlayerView: NSView {
         guard let track = playlistManager?.currentTrack else {
             return
         }
-        
-        let index = (playlistManager?.currentIndex ?? 0) + 1
 
         var newText: String
         if (audioEngine?.isRadioStream == true) || track.isStream {
