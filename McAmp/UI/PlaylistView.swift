@@ -637,18 +637,15 @@ class PlaylistView: NSView {
     // resize handle
     private var resizeHandleRect: NSRect { NSRect(x: logicalWidth - 12 - 3, y: 3, width: 12, height: 12) }
 
-    // Six baked mini-transport buttons in pledit.bmp's BR corner. Webamp
-    // .playlist-action-buttons: top:22, left:3, children 10×10, packed in
-    // a flex row. AppKit y = 38 - 22 - 10 = 6. Corner draws at
-    // (bounds.width - 150, 0), so corner-local x maps to
-    // bounds.width - 150 + corner_x.
-    private var skinnedMiniPrevRect: NSRect { NSRect(x: logicalWidth - 147, y: 6, width: 10, height: 10) }
-    private var skinnedMiniPlayRect: NSRect { NSRect(x: logicalWidth - 137, y: 6, width: 10, height: 10) }
-    private var skinnedMiniPauseRect: NSRect { NSRect(x: logicalWidth - 127, y: 6, width: 10, height: 10) }
-    private var skinnedMiniStopRect: NSRect { NSRect(x: logicalWidth - 117, y: 6, width: 10, height: 10) }
-    private var skinnedMiniNextRect: NSRect { NSRect(x: logicalWidth - 107, y: 6, width: 10, height: 10) }
-    private var skinnedMiniEjectRect: NSRect { NSRect(x: logicalWidth -  97, y: 6, width: 10, height: 10) }
+    // Six baked mini-transport buttons in pledit.bmp's BR corner.
+    private var skinnedMiniPrevRect: NSRect { NSRect(x: logicalWidth - 145, y: 6, width: 9, height: 11) }
+    private var skinnedMiniPlayRect: NSRect { NSRect(x: logicalWidth - 136, y: 6, width: 9, height: 11) }
+    private var skinnedMiniPauseRect: NSRect { NSRect(x: logicalWidth - 127, y: 6, width: 9, height: 11) }
+    private var skinnedMiniStopRect: NSRect { NSRect(x: logicalWidth - 118, y: 6, width: 9, height: 11) }
+    private var skinnedMiniNextRect: NSRect { NSRect(x: logicalWidth - 109, y: 6, width: 9, height: 11) }
+    private var skinnedMiniEjectRect: NSRect { NSRect(x: logicalWidth -  99, y: 6, width: 9, height: 11) } // eject has a 1 px gap
 
+    
     // MARK: - Mouse handling (skinned mode: dragging + bottom buttons)
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
         return true

@@ -319,7 +319,8 @@ class MainPlayerView: NSView {
     }
 
     // MARK: - Binding
-    func bindToModels(audioEngine: AudioEngine, playlistManager: PlaylistManager, playlistView: PlaylistView) {
+    func bindToModels(audioEngine: AudioEngine, playlistManager: PlaylistManager,
+                      playlistView: PlaylistView, transport: TransportActions) {
         self.audioEngine = audioEngine
         self.playlistManager = playlistManager
         self.playlistView = playlistView
@@ -429,28 +430,12 @@ class MainPlayerView: NSView {
             .store(in: &cancellables)
 
         // Transport
-        transportBar.onPrevious = { [weak playlistManager] in playlistManager?.playPrevious() }
-        transportBar.onPlay = { [weak self] in
-            guard let self, let engine = self.audioEngine else { return }
-            if engine.playState == .stopped,
-               let pm = self.playlistManager {
-                // playTrack honors CUE segment bounds (a bare loadAndPlay(url:)
-                // would play the whole album file) and re-arms gapless chaining.
-                pm.playTrack(at: playlistView.selectedTrackIndex())
-            } else {
-                engine.play()
-            }
-        }
-        transportBar.onPause = { [weak audioEngine] in audioEngine?.pause() }
-        transportBar.onStop = { [weak audioEngine] in audioEngine?.stop() }
-        transportBar.onNext = { [weak playlistManager] in
-            let selectedTrackIndex = playlistView.selectedTrackIndex()
-            if selectedTrackIndex != playlistManager?.currentIndex {
-                playlistManager?.currentIndex = selectedTrackIndex - 1
-            }
-            playlistManager?.playNext()
-        }
-        transportBar.onEject = { [weak self] in self?.playlistManager?.openFileFolderList() }
+        transportBar.onPrevious = { transport.previous() }
+        transportBar.onPlay = { transport.play() }
+        transportBar.onPause = { transport.pause() }
+        transportBar.onStop = { transport.stop() }
+        transportBar.onNext = { transport.next() }
+        transportBar.onEject = { transport.eject() }
 
         // Play state
         audioEngine.$isPlaying

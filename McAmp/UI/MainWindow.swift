@@ -21,6 +21,7 @@ class MainWindow: NSWindow {
     let mainPlayerView = MainPlayerView()
     let equalizerView = EqualizerView()
     let playlistView = PlaylistView()
+    private let transport = TransportActions()
 
     private let equalizerWindow: WinampAuxiliaryWindow
     private let playlistWindow: WinampAuxiliaryWindow
@@ -439,30 +440,18 @@ class MainWindow: NSWindow {
 
     func bindToModels(audioEngine: AudioEngine, playlistManager: PlaylistManager) {
         self.audioEngine = audioEngine
-        mainPlayerView.bindToModels(audioEngine: audioEngine, playlistManager: playlistManager, playlistView: playlistView)
+        transport.bindToModels(audioEngine: audioEngine, playlistManager: playlistManager, playlistView: playlistView)
+        mainPlayerView.bindToModels(audioEngine: audioEngine, playlistManager: playlistManager, playlistView: playlistView, transport: transport)
         equalizerView.bindToModel(audioEngine: audioEngine, playlistManager: playlistManager)
         playlistView.bindToModel(playlistManager: playlistManager)
 
-        playlistView.onMiniPrev = { [weak playlistManager] in playlistManager?.playPrevious() }
-        playlistView.onMiniPlay = { [weak self, weak audioEngine, weak playlistManager] in
-            guard let self, let engine = audioEngine else { return }
-            if engine.playState == .stopped, let pm = playlistManager {
-                pm.playTrack(at: self.playlistView.selectedTrackIndex())
-            } else {
-                engine.play()
-            }
-        }
-        playlistView.onMiniPause = { [weak audioEngine] in audioEngine?.pause() }
-        playlistView.onMiniStop = { [weak audioEngine] in audioEngine?.stop() }
-        playlistView.onMiniNext = { [weak self, weak playlistManager] in
-            guard let self else { return }
-            let selectedTrackIndex = self.playlistView.selectedTrackIndex()
-            if selectedTrackIndex != playlistManager?.currentIndex {
-                playlistManager?.currentIndex = selectedTrackIndex - 1
-            }
-            playlistManager?.playNext()
-        }
-
+        playlistView.onMiniPrev = { self.transport.previous() }
+        playlistView.onMiniPlay = { self.transport.play() }
+        playlistView.onMiniPause = { self.transport.pause() }
+        playlistView.onMiniStop = { self.transport.stop() }
+        playlistView.onMiniNext = { self.transport.next() }
+        playlistView.onMiniEject = { self.transport.eject() }
+        
         mainPlayerView.onToggleEQ = { [weak self] in self?.showEqualizer.toggle() }
         mainPlayerView.onTogglePL = { [weak self] in self?.showPlaylist.toggle() }
     }
