@@ -329,7 +329,9 @@ class MainPlayerView: NSView {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] time in
                 guard self?.audioEngine?.isRadioStream != true else { return }
-                self?.timeDisplay.timeInSeconds = time }
+                self?.timeDisplay.timeInSeconds = time
+                self?.playlistView?.nowPlayingTime = time
+            }
             .store(in: &cancellables)
 
         // Spectrum
@@ -493,7 +495,8 @@ class MainPlayerView: NSView {
             newText = "\(track.displayTitle) (\(track.formattedDuration))"
         }
         if lcdDisplay.text != newText { lcdDisplay.text = newText }
-        playlistView?.nowPlayingText = "\(index). \(newText)"
+        playlistView?.nowPlayingText = newText
+        playlistView?.nowPlayingDuration = track.formattedDuration
     }
 
     private func doubleSize() {

@@ -43,6 +43,7 @@ class PlaylistManager: ObservableObject {
 
     var formattedTotalDuration: String {
         let total = Int(totalDuration)
+        if total == 0 { return "" }
         let hours = total / 3600
         let minutes = (total % 3600) / 60
         let seconds = total % 60

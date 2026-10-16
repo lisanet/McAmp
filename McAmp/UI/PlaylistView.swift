@@ -35,6 +35,17 @@ class PlaylistView: NSView {
     var nowPlayingText: String = "" {
         didSet { shadedLCD.text = nowPlayingText }
     }
+    var nowPlayingDuration: String = "" {
+        didSet { needsDisplay = true }
+    }
+    private var playingTime: String = "     "
+    var nowPlayingTime: TimeInterval = 0 {
+        didSet {
+            let totalSeconds = Int(max(0, nowPlayingTime))
+            playingTime = totalSeconds == 0 ? "     " : String(format: "%02d:%02d", totalSeconds / 60, totalSeconds % 60)
+            needsDisplay = true
+        }
+    }
     
     // Set by MainWindow.bindToModels / AppDelegate. Baked into pledit.bmp's
     // BR corner; mirrors classic Winamp's playlist-local transport row.
@@ -272,10 +283,12 @@ class PlaylistView: NSView {
         // Webamp positions #playlist-running-time-display at top:10, left:7
         // inside the 150×38 BR corner, i.e. absolute (w-150+7, corner-top-10).
         if let textSheet = WinampTheme.provider.textSheet, let pm = playlistManager {
-            let info = "\(pm.tracks.count) / \(pm.formattedTotalDurationCompact)"
+            let slash = pm.formattedTotalDuration.isEmpty ? "" : " / "
+            let info = "\(nowPlayingDuration)\(slash)\(pm.formattedTotalDuration)"
             let textX = w - 150 + 7
             let textY: CGFloat = 38 - 10 - TextSpriteRenderer.glyphHeight
             TextSpriteRenderer.draw(info, at: NSPoint(x: textX, y: textY), sheet: textSheet)
+            TextSpriteRenderer.draw(playingTime, at: NSPoint(x: w - 79, y: 9), sheet: textSheet)
         }
     }
 
@@ -420,6 +433,9 @@ class PlaylistView: NSView {
         } ?? -1
     }
 
+    // MARK: - bottom bar display
+
+    
     // MARK: - Bottom-bar menus (shared by skinned + unskinned modes)
     //
     // Menu anchoring rule: each menu is anchored to the rect of its button. In
