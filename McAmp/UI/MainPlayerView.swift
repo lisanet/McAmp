@@ -241,13 +241,8 @@ class MainPlayerView: NSView {
         
 
         // Title bar overlay (main.bmp leaves the top 14px empty for this).
-        // Webamp y=0..14 (top-down) → AppKit y = mainHeight - 14.
-//        let isActive = window?.isKeyWindow ?? true
-//        if let tb = WinampTheme.sprite(isActive ? .titleBarActive : .titleBarInactive) {
-//            tb.draw(in: NSRect(x: 0, y: mainHeight - 14, width: bounds.width, height: 14))
-//        }
         // alwys draw active titlebar
-        if let tb = WinampTheme.sprite(.titleBarActive) {
+        if let tb = WinampTheme.sprite(.titleBar(active: true)) {
             tb.draw(in: NSRect(x: 0, y: mainHeight - 14, width: bounds.width, height: 14))
         }
 

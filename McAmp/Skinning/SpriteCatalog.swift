@@ -25,8 +25,7 @@ enum SpriteKey: Hashable {
     case stereo(active: Bool)
 
     // titlebar (main window title, from titlebar.bmp)
-    case titleBarActive
-    case titleBarInactive
+    case titleBar(active: Bool)
     case titleBarCloseButton(pressed: Bool)
     case titleBarShadeButton(pressed: Bool)
     case titleShadedBar
@@ -126,11 +125,9 @@ enum SpriteCoordinates {
             return SpriteInfo(sheet: "monoster", rect: CGRect(x:  0, y: active ? 0 : 12, width: 29, height: 12))
 
         // MARK: titlebar
-        case .titleBarActive:
-            return SpriteInfo(sheet: "titlebar", rect: CGRect(x: 27, y:  0, width: 275, height: 14))
-        case .titleBarInactive:
-            return SpriteInfo(sheet: "titlebar", rect: CGRect(x: 27, y: 15, width: 275, height: 14))
-        case .titleBarCloseButton(let pressed):
+        case .titleBar(let active):
+            return SpriteInfo(sheet: "titlebar", rect: CGRect(x: 27, y: active ? 0 : 15, width: 275, height: 14))
+         case .titleBarCloseButton(let pressed):
             return SpriteInfo(sheet: "titlebar", rect: CGRect(x: 18, y: pressed ? 9 : 0, width: 9, height: 9))
         case .titleBarShadeButton(let pressed):
             return SpriteInfo(sheet: "titlebar", rect: CGRect(x:  0, y: pressed ? 27 : 18, width: 9, height: 9))

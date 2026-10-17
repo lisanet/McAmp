@@ -183,8 +183,7 @@ class EqualizerView: NSView {
         }
         
         // Title bar overlay (y=0..14 of the EQ body is left empty for this).
-        let isActive = window?.isKeyWindow ?? true
-        if let tb = WinampTheme.sprite(.eqTitleBar(active: isActive)) {
+        if let tb = WinampTheme.sprite(.eqTitleBar(active: true)) {
             tb.draw(in: NSRect(x: 0, y: bounds.height - 14, width: bounds.width, height: 14))
         }
     }

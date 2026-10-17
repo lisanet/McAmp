@@ -155,7 +155,8 @@ class PlaylistView: NSView {
             tile.draw(at: NSPoint(x: x, y: y), from: .zero, operation: .sourceOver, fraction: 1)
         }
 
-        let isActive = window?.isKeyWindow ?? true
+        // let isActive = window?.isKeyWindow ?? true
+        let isActive = true
         let requestedSize = NSSize(width: logicalWidth, height: logicalHeight)
         if let cached = WinampTheme.plvCompositeImage,
             compositeSize == requestedSize,
