@@ -3,6 +3,7 @@ import Combine
 
 enum WinampSliderStyle {
     case seek       // olive-green, horizontal
+    case miniseek   // seek in shaded mode
     case volume     // orange gradient, horizontal
     case shadedVol  // volume in shaded mode
     case balance    // olive-green, horizontal
@@ -73,6 +74,13 @@ class WinampSlider: NSView {
             let thumbX = n * (bounds.width - thumbW)
             if let thumb = WinampTheme.sprite(.seekThumb(pressed: isUserInteracting)) {
                 thumb.draw(in: NSRect(x: thumbX, y: (bounds.height - 10) / 2, width: thumbW, height: 10))
+            }
+            
+        case .miniseek:
+            let thumbW: CGFloat = 3
+            let thumbX = n * (bounds.width - thumbW)
+            if let thumb = WinampTheme.sprite(.shadedSeekThumb) {
+                thumb.draw(in: NSRect(x: thumbX, y: 0, width: 3, height: 7))
             }
 
         case .volume:

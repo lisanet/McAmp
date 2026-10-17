@@ -40,6 +40,7 @@ class MainPlayerView: NSView {
     private let transportBar = TransportBar()
     private let miniControls = MiniControls()
     private let miniSpectrum = SpectrumView()
+    private let miniSeekSlider = WinampSlider(style: .miniseek)
     private var playingTime: String = "     "
     var nowPlayingTime: TimeInterval = 0 {
         didSet {
@@ -104,6 +105,7 @@ class MainPlayerView: NSView {
         addSubview(miniControls)
         miniSpectrum.wantsLayer = true
         addSubview(miniSpectrum)
+        addSubview(miniSeekSlider)
         
         // normal mode
         // Time display
@@ -314,6 +316,8 @@ class MainPlayerView: NSView {
         miniSpectrum.isHidden = false
         miniSpectrum.frame = NSRect(x: 80, y: 4, width: 38, height: 6)
         miniSpectrum.spectrumType(type: .mini)
+        miniSeekSlider.isHidden = false
+        miniSeekSlider.frame = NSRect(x: 227, y:4, width: 15, height: 7)
     }
 
     /// Exact Winamp 2.x pixel coordinates, ported from Webamp's main-window.css.
@@ -323,6 +327,7 @@ class MainPlayerView: NSView {
         bodyViews.forEach { $0.isHidden = false }
         miniControls.isHidden = true
         miniSpectrum.isHidden = true
+        miniSeekSlider.isHidden = true
         
         // FIXME: implement play state sprites
         playIndicator.isHidden = true
@@ -431,15 +436,19 @@ class MainPlayerView: NSView {
         // Seek slider
         audioEngine.$duration
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] dur in self?.seekSlider.maxValue = Float(dur) }
+            .sink { [weak self] dur in
+                self?.seekSlider.maxValue = Float(dur)
+                self?.miniSeekSlider.maxValue = Float(dur)
+            }
             .store(in: &cancellables)
 
         audioEngine.$currentTime
             .receive(on: DispatchQueue.main)
             .sink { [weak self] time in
                 guard let self, self.seekSlider.window != nil else { return }
-                guard !self.seekSlider.isUserInteracting else { return }
+                guard !self.seekSlider.isUserInteracting, !self.miniSeekSlider.isUserInteracting else { return }
                 self.seekSlider.value = Float(time)
+                self.miniSeekSlider.value = Float(time)
             }
             .store(in: &cancellables)
 

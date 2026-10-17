@@ -41,6 +41,7 @@ enum SpriteKey: Hashable {
     // posbar
     case seekBackground
     case seekThumb(pressed: Bool)
+    case shadedSeekThumb
 
     // volume
     case volumeBackground(position: Int)   // 0–27
@@ -151,6 +152,8 @@ enum SpriteCoordinates {
             return SpriteInfo(sheet: "posbar", rect: CGRect(x: 0, y: 0, width: 248, height: 10))
         case .seekThumb(let pressed):
             return SpriteInfo(sheet: "posbar", rect: CGRect(x: pressed ? 278 : 248, y: 0, width: 29, height: 10))
+        case .shadedSeekThumb:
+            return SpriteInfo(sheet: "titlebar", rect: CGRect(x: 20, y: 36, width: 3, height: 7))
 
         // MARK: volume — 28 background variants stacked vertically (each 68×13 at y = p*15)
         case .volumeBackground(let p):
