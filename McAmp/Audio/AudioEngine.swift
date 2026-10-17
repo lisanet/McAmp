@@ -122,7 +122,7 @@ extension AudioEngine: RadioAudioParserDelegate {
 }
 
 class AudioEngine: ObservableObject {
-    var maxSpectrumBars = 0 // unskinned = 26, skinned = 19, set in MainPlayerView.layout
+    let maxSpectrumBars = 19 // skinned = 19
     // MARK: - Published State
     @Published var isPlaying = false
     @Published var playState: PlayState = .stopped
