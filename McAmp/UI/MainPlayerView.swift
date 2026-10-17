@@ -38,6 +38,16 @@ class MainPlayerView: NSView {
     private let volumeSlider = WinampSlider(style: .volume)
     private let balanceSlider = WinampSlider(style: .balance)
     private let transportBar = TransportBar()
+    private let miniControls = MiniControls()
+    private var playingTime: String = "     "
+    var nowPlayingTime: TimeInterval = 0 {
+        didSet {
+            // if !isShaded { return }
+            let totalSeconds = Int(max(0, nowPlayingTime))
+            playingTime = totalSeconds == 0 ? "     " : String(format: "%02d:%02d", totalSeconds / 60, totalSeconds % 60)
+            needsDisplay = true
+        }
+    }
 
     // Toggle buttons
     private let shuffleButton = WinampButton(title: "", style: .toggle)
@@ -89,6 +99,10 @@ class MainPlayerView: NSView {
     required init?(coder: NSCoder) { fatalError() }
 
     private func setupSubviews() {
+        // shaded mode
+        addSubview(miniControls)
+        
+        // normal mode
         // Time display
         timeDisplay.wantsLayer = true
         addSubview(timeDisplay)
@@ -181,7 +195,29 @@ class MainPlayerView: NSView {
 
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
-        drawSkinned()
+        if isShaded {
+            drawShaded()
+        } else {
+            drawSkinned()
+        }
+    }
+    
+    private func drawShaded() {
+        let ctx = NSGraphicsContext.current
+        let prev = ctx?.imageInterpolation
+        ctx?.imageInterpolation = .none
+        defer { if let prev = prev { ctx?.imageInterpolation = prev } }
+        
+        if let tb = WinampTheme.sprite(.titleShadedBar) {
+            tb.draw(in: bounds)
+        }
+        
+        if let textSheet = WinampTheme.provider.textSheet {
+            let timeX = 132
+            let timeY = 4
+            TextSpriteRenderer.draw(playingTime, at: NSPoint(x: timeX, y: timeY), sheet: textSheet)
+        }
+        
     }
 
     private func drawSkinned() {
@@ -189,14 +225,6 @@ class MainPlayerView: NSView {
         let prev = ctx?.imageInterpolation
         ctx?.imageInterpolation = .none
         defer { if let prev = prev { ctx?.imageInterpolation = prev } }
-
-        if isShaded {
-            if let tb = WinampTheme.sprite(.titleShadedBar) {
-                tb.draw(in: bounds)
-            }
-            return
-        }
-        
         
         // View is resized to 116 px (native main.bmp height) when skinned,
         // so the sprite fills bounds exactly and sub-sprite coordinates are
@@ -278,6 +306,9 @@ class MainPlayerView: NSView {
     private func layoutShaded() {
         bodyViews.forEach { $0.isHidden = true }
         playIndicator.isHidden = true
+        
+        miniControls.isHidden = false
+        miniControls.frame = NSRect(x: 168, y: 1, width: 55, height: 11)
     }
 
     /// Exact Winamp 2.x pixel coordinates, ported from Webamp's main-window.css.
@@ -285,6 +316,7 @@ class MainPlayerView: NSView {
     /// to AppKit (bottom-up) as: y_appkit = 116 - y_webamp - height.
     private func layoutSkinned() {
         bodyViews.forEach { $0.isHidden = false }
+        miniControls.isHidden = true
         
         // FIXME: implement play state sprites
         playIndicator.isHidden = true
@@ -332,6 +364,7 @@ class MainPlayerView: NSView {
                 guard self?.audioEngine?.isRadioStream != true else { return }
                 self?.timeDisplay.timeInSeconds = time
                 self?.playlistView?.nowPlayingTime = time
+                self?.nowPlayingTime = time
             }
             .store(in: &cancellables)
 
@@ -430,13 +463,21 @@ class MainPlayerView: NSView {
             .store(in: &cancellables)
 
         // Transport
-        transportBar.onPrevious = { transport.previous() }
-        transportBar.onPlay = { transport.play() }
-        transportBar.onPause = { transport.pause() }
-        transportBar.onStop = { transport.stop() }
-        transportBar.onNext = { transport.next() }
-        transportBar.onEject = { transport.eject() }
+        transportBar.onPrevious = transport.previous
+        transportBar.onPlay = transport.play
+        transportBar.onPause = transport.pause
+        transportBar.onStop = transport.stop
+        transportBar.onNext = transport.next
+        transportBar.onEject = transport.eject
 
+        // shaded mode mini controls
+        miniControls.onPrevious = transport.previous
+        miniControls.onPlay = transport.play
+        miniControls.onPause = transport.pause
+        miniControls.onStop = transport.stop
+        miniControls.onNext = transport.next
+        miniControls.onEject = transport.eject
+        
         // Play state
         audioEngine.$isPlaying
             .receive(on: DispatchQueue.main)

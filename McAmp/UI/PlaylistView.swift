@@ -9,9 +9,10 @@ class PlaylistView: NSView {
     private let tableView = PlaylistTableView()
     private let skinScroller = PlaylistSkinScroller()
     private let shadedLCD = LCDDisplay()
+    let miniControls = MiniControls()
 
     private var bodyViews: [NSView] {
-            [scrollView, tableView, skinScroller]
+            [scrollView, tableView, skinScroller, miniControls]
     }
     
     private var cancellables = Set<AnyCancellable>()
@@ -41,20 +42,12 @@ class PlaylistView: NSView {
     private var playingTime: String = "     "
     var nowPlayingTime: TimeInterval = 0 {
         didSet {
+            if isShaded { return }
             let totalSeconds = Int(max(0, nowPlayingTime))
             playingTime = totalSeconds == 0 ? "     " : String(format: "%02d:%02d", totalSeconds / 60, totalSeconds % 60)
             needsDisplay = true
         }
     }
-    
-    // Set by MainWindow.bindToModels / AppDelegate. Baked into pledit.bmp's
-    // BR corner; mirrors classic Winamp's playlist-local transport row.
-    var onMiniPrev:  (() -> Void)?
-    var onMiniPlay:  (() -> Void)?
-    var onMiniPause: (() -> Void)?
-    var onMiniStop:  (() -> Void)?
-    var onMiniNext:  (() -> Void)?
-    var onMiniEject: (() -> Void)?
 
     var onTitleBarDragBegan: ((NSPoint) -> Void)?
     var onTitleBarDragChanged: ((NSPoint) -> Void)?
@@ -126,6 +119,8 @@ class PlaylistView: NSView {
         scrollView.scrollerInsets = NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
         scrollView.verticalScroller?.controlSize = .small
         addSubview(scrollView)
+
+        addSubview(miniControls)
 
         // Skinned scroll handle (lives in the right-tile area; hidden when unskinned).
         skinScroller.attach(to: scrollView)
@@ -360,6 +355,9 @@ class PlaylistView: NSView {
         let trackH = max(0, trackTop - trackBottom)
         skinScroller.frame = NSRect(x: 0, y: trackBottom, width: w, height: trackH)
         skinScroller.logicalWidth = logicalWidth
+        
+        // width = 6 x 9 + 1 px gap
+        miniControls.frame = NSRect(x: logicalWidth - 145, y: 6, width: 55, height: 11)
     }
 
     func bindToModel(playlistManager: PlaylistManager) {
@@ -636,16 +634,7 @@ class PlaylistView: NSView {
 
     // resize handle
     private var resizeHandleRect: NSRect { NSRect(x: logicalWidth - 12 - 3, y: 3, width: 12, height: 12) }
-
-    // Six baked mini-transport buttons in pledit.bmp's BR corner.
-    private var skinnedMiniPrevRect: NSRect { NSRect(x: logicalWidth - 145, y: 6, width: 9, height: 11) }
-    private var skinnedMiniPlayRect: NSRect { NSRect(x: logicalWidth - 136, y: 6, width: 9, height: 11) }
-    private var skinnedMiniPauseRect: NSRect { NSRect(x: logicalWidth - 127, y: 6, width: 9, height: 11) }
-    private var skinnedMiniStopRect: NSRect { NSRect(x: logicalWidth - 118, y: 6, width: 9, height: 11) }
-    private var skinnedMiniNextRect: NSRect { NSRect(x: logicalWidth - 109, y: 6, width: 9, height: 11) }
-    private var skinnedMiniEjectRect: NSRect { NSRect(x: logicalWidth -  99, y: 6, width: 9, height: 11) } // eject has a 1 px gap
-
-    
+  
     // MARK: - Mouse handling (skinned mode: dragging + bottom buttons)
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
         return true
@@ -683,12 +672,6 @@ class PlaylistView: NSView {
             if Self.skinnedSelRect.contains(point)  { showSelMenu(); return }
             if Self.skinnedMiscRect.contains(point) { showMiscMenu(); return }
             if skinnedListOptsRect.contains(point) { showListOptsMenu(); return }
-            if skinnedMiniPrevRect.contains(point)  { onMiniPrev?();  return }
-            if skinnedMiniPlayRect.contains(point)  { onMiniPlay?();  return }
-            if skinnedMiniPauseRect.contains(point) { onMiniPause?(); return }
-            if skinnedMiniStopRect.contains(point)  { onMiniStop?();  return }
-            if skinnedMiniNextRect.contains(point)  { onMiniNext?();  return }
-            if skinnedMiniEjectRect.contains(point) { onMiniEject?(); return }
         }
 
         super.mouseDown(with: event)

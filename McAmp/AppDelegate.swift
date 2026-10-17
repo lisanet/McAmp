@@ -90,7 +90,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Create window
         mainWindow = MainWindow()
         mainWindow.bindToModels(audioEngine: audioEngine, playlistManager: playlistManager)
-        mainWindow.playlistView.onMiniEject = { [weak self] in self?.openFileAction() }
         mainWindow.showEqualizer = appState.showEqualizer
         mainWindow.showPlaylist = appState.showPlaylist
         mainWindow.alwaysOnTop = appState.alwaysOnTop

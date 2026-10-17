@@ -445,13 +445,13 @@ class MainWindow: NSWindow {
         equalizerView.bindToModel(audioEngine: audioEngine, playlistManager: playlistManager)
         playlistView.bindToModel(playlistManager: playlistManager)
 
-        playlistView.onMiniPrev = { self.transport.previous() }
-        playlistView.onMiniPlay = { self.transport.play() }
-        playlistView.onMiniPause = { self.transport.pause() }
-        playlistView.onMiniStop = { self.transport.stop() }
-        playlistView.onMiniNext = { self.transport.next() }
-        playlistView.onMiniEject = { self.transport.eject() }
-        
+        playlistView.miniControls.onPrevious = transport.previous
+        playlistView.miniControls.onPlay = transport.play
+        playlistView.miniControls.onPause = transport.pause
+        playlistView.miniControls.onStop = transport.stop
+        playlistView.miniControls.onNext = transport.next
+        playlistView.miniControls.onEject = transport.eject
+
         mainPlayerView.onToggleEQ = { [weak self] in self?.showEqualizer.toggle() }
         mainPlayerView.onTogglePL = { [weak self] in self?.showPlaylist.toggle() }
     }
