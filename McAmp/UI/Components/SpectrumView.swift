@@ -1,6 +1,11 @@
 import Cocoa
 import Combine
 
+enum SpectrumType {
+    case normal
+    case mini
+}
+
 class SpectrumView: NSView {
     var spectrumData: [Float] = [] {
         didSet {
@@ -8,14 +13,13 @@ class SpectrumView: NSView {
             needsDisplay = true
         }
     }
-    var barCount: Int = 0
+    var barCount: Int = 19
 
     /// Winamp convention: 16 vertical rows, each painted with viscolors[2..17] bottom→top.
-    private static let rowCount = 16
 
-    private let barWidth: CGFloat = 3
-    private let gap: CGFloat = 1
-    /// Per-bar peak position (0...rowCount), decays 0.35 rows per spectrumData update.
+    private var barWidth: CGFloat = 3
+    private var gap: CGFloat = 1
+    /// Per-bar peak position decays 0.35 rows per spectrumData update.
     private var peaks: [CGFloat] = []
     private var amplitudeBars: [Int] = []
 
@@ -30,14 +34,25 @@ class SpectrumView: NSView {
             .sink { [weak self] _ in self?.needsDisplay = true }
     }
     required init?(coder: NSCoder) { fatalError() }
-
+    
+    func spectrumType(type: SpectrumType) {
+        switch type {
+        case .mini:
+            barWidth = 2
+            gap = 0
+        default:
+            barWidth = 3
+            gap = 1
+        }
+    }
+    
     private func updatePeaks() {
-        barCount = spectrumData.count // unskinned = 26, skinned = 19
+        barCount = spectrumData.count // skinned = 19
         if amplitudeBars.count != barCount {
             amplitudeBars = Array(repeating: 0, count: barCount)
             peaks = Array(repeating: 0, count: barCount)
         }
-        let rows = CGFloat(Self.rowCount)
+        let rows = bounds.height
         for i in 0..<barCount {
             let amplitude = spectrumData[i]
             let barRows = CGFloat(amplitude) * rows
@@ -53,8 +68,8 @@ class SpectrumView: NSView {
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
         guard amplitudeBars.count > 0 else { return }
-        let rows = Self.rowCount
-        let rowHeight = bounds.height / CGFloat(rows)
+        let rows = Int(bounds.height)
+        let rowHeight: CGFloat = 1 // bounds.height / CGFloat(rows)
 
         let viscolors = WinampTheme.provider.viscolors
         guard viscolors.count >= 24 else { return }

@@ -39,6 +39,7 @@ class MainPlayerView: NSView {
     private let balanceSlider = WinampSlider(style: .balance)
     private let transportBar = TransportBar()
     private let miniControls = MiniControls()
+    private let miniSpectrum = SpectrumView()
     private var playingTime: String = "     "
     var nowPlayingTime: TimeInterval = 0 {
         didSet {
@@ -101,6 +102,8 @@ class MainPlayerView: NSView {
     private func setupSubviews() {
         // shaded mode
         addSubview(miniControls)
+        miniSpectrum.wantsLayer = true
+        addSubview(miniSpectrum)
         
         // normal mode
         // Time display
@@ -290,7 +293,6 @@ class MainPlayerView: NSView {
         } else {
             layoutSkinned()
         }
-        audioEngine?.maxSpectrumBars = 19
     }
     
     private func layoutTitleHitZones() {
@@ -309,6 +311,9 @@ class MainPlayerView: NSView {
         
         miniControls.isHidden = false
         miniControls.frame = NSRect(x: 168, y: 1, width: 55, height: 11)
+        miniSpectrum.isHidden = false
+        miniSpectrum.frame = NSRect(x: 80, y: 4, width: 38, height: 6)
+        miniSpectrum.spectrumType(type: .mini)
     }
 
     /// Exact Winamp 2.x pixel coordinates, ported from Webamp's main-window.css.
@@ -317,6 +322,7 @@ class MainPlayerView: NSView {
     private func layoutSkinned() {
         bodyViews.forEach { $0.isHidden = false }
         miniControls.isHidden = true
+        miniSpectrum.isHidden = true
         
         // FIXME: implement play state sprites
         playIndicator.isHidden = true
@@ -371,7 +377,14 @@ class MainPlayerView: NSView {
         // Spectrum
         audioEngine.$spectrumData
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] data in self?.spectrumView.spectrumData = data }
+            .sink { [weak self] data in
+                guard let self else { return }
+                if self.isShaded {
+                    self.miniSpectrum.spectrumData = data
+                } else {
+                    self.spectrumView.spectrumData = data
+                }
+            }
             .store(in: &cancellables)
 
         // Track info
