@@ -37,6 +37,8 @@ Two classic skins are included in the DMG: *base-2.91* and *ExpensiveHi-Fi*. Sim
 <img width="720" alt="McAmp with different classic Winamp skins" src="docs/media/skins-grid.png" />
 </br>
 <img width="720" alt="McAmp with classic Winamp skins rearranged" src="docs/media/grid.png" />
+</br>
+<img width="360" alt="McAmp with classic Winamp in shaded mode" src="docs/media/shaded.png" />
 
 </div>
 
