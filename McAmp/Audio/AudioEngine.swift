@@ -566,7 +566,7 @@ class AudioEngine: ObservableObject {
     // MARK: - Time Updates
     private func startTimeUpdates() {
         stopTimeUpdates()
-        timeUpdateTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
+        timeUpdateTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
             self?.updateCurrentTime()
         }
     }
