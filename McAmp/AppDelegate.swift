@@ -567,7 +567,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func setupStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         if let button = statusItem.button {
-                button.image = NSImage(systemSymbolName: "dot.radiowaves.left.and.right",
+                button.image = NSImage(systemSymbolName: "chart.bar.xaxis",
                                        accessibilityDescription: "McAmp")
                 button.image?.isTemplate = true
             }
