@@ -186,7 +186,7 @@ class MainPlayerView: NSView {
         githubHitZone.addGestureRecognizer(githubClick)
     }
 
-    @objc private func handleSkinnedClose() { NSApp.terminate(nil) }
+    @objc private func handleSkinnedClose() { NSApp.hide(self) }
     @objc private func handleSkinnedShade() {
         isShaded.toggle()
     }
