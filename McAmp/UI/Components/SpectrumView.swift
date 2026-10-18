@@ -19,6 +19,7 @@ class SpectrumView: NSView {
 
     private var barWidth: CGFloat = 3
     private var gap: CGFloat = 1
+    private var colorstep: Int = 1
     /// Per-bar peak position decays 0.35 rows per spectrumData update.
     private var peaks: [CGFloat] = []
     private var amplitudeBars: [Int] = []
@@ -40,9 +41,11 @@ class SpectrumView: NSView {
         case .mini:
             barWidth = 2
             gap = 0
+            colorstep = 3
         default:
             barWidth = 3
             gap = 1
+            colorstep = 1
         }
     }
     
@@ -84,7 +87,7 @@ class SpectrumView: NSView {
 
             // Discrete 16-step bar
             for r in 0..<litRows {
-                viscolors[17 - r].setFill()
+                viscolors[17 - (r * colorstep)].setFill()
                 NSRect(x: x,
                        y: CGFloat(r) * rowHeight,
                        width: barWidth,
