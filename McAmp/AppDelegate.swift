@@ -244,33 +244,25 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     /// works for both the main menu bar and the title-bar popup, and reaches
     /// AppDelegate via NSApp.delegate.
     static func buildAppMenuItems(state: AppMenuState) -> AppMenuItems {
-        func item(_ title: String, _ action: Selector, _ keyEquivalent: String, symbol: String) -> NSMenuItem {
+        func item(_ title: String, _ action: Selector, _ keyEquivalent: String) -> NSMenuItem {
             let mi = NSMenuItem(title: title, action: action, keyEquivalent: keyEquivalent)
-            mi.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
             return mi
         }
 
         // App
-        let about = item("About McAmp", #selector(showAboutPanel), "", symbol: "info.circle")
-        let hide = item("Hide McAmp", #selector(NSApplication.hide(_:)), "h", symbol: "eye.slash")
-        let quit = item("Quit McAmp", #selector(NSApplication.terminate(_:)), "q", symbol: "power")
+        let about = item("About McAmp", #selector(showAboutPanel), "")
+        let hide = item("Hide McAmp", #selector(NSApplication.hide(_:)), "h")
+        let quit = item("Quit McAmp", #selector(NSApplication.terminate(_:)), "q")
 
         // File
-        let openFile = item("Open…", #selector(openFileAction), "o", symbol: "doc")
-        let newList = item("New List", #selector(newListAction), "n", symbol: "")
-        let loadList = item("Load List…", #selector(loadListAction), "l", symbol: "")
-        let saveList = item("SaveList…", #selector(saveListAction), "", symbol: "")
-        let importMusic = item("Import from Music Library…",
-                               
-                               #selector(importFromMusicLibraryAction),
-                               "",
-                               symbol: "music.note.list")
+        let openFile = item("Open…", #selector(openFileAction), "o")
+        let newList = item("New List", #selector(newListAction), "n")
+        let loadList = item("Load List…", #selector(loadListAction), "l")
+        let saveList = item("SaveList…", #selector(saveListAction), "")
+        let importMusic = item("Import from Music Library…", #selector(importFromMusicLibraryAction), "")
 
         // Edit (just Select All — routed to NSTableView via responder chain)
-        let selectAll = item("Select All",
-                             #selector(NSResponder.selectAll(_:)),
-                             "a",
-                             symbol: "checkmark.rectangle.stack")
+        let selectAll = item("Select All", #selector(NSResponder.selectAll(_:)), "a")
 
         // Controls
         // No bare-Space key equivalent here: a modifier-less menu key equivalent
@@ -278,41 +270,32 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // from every text field (playlist search, Jump-to-File). Space playback
         // toggling lives in MainWindow.keyDown, which only fires when no text
         // field consumed the key.
-        let playPause = item("Play/Pause", #selector(togglePlayPause), "", symbol: "playpause.fill")
-        let stop = item("Stop", #selector(stopAction), ".", symbol: "stop.fill")
-        let next = item("Next",
-                        #selector(nextAction),
-                        String(Character(UnicodeScalar(NSRightArrowFunctionKey)!)),
-                        symbol: "forward.fill")
+        let playPause = item("Play/Pause", #selector(togglePlayPause), "")
+        let stop = item("Stop", #selector(stopAction), ".")
+        let next = item("Next", #selector(nextAction), String(Character(UnicodeScalar(NSRightArrowFunctionKey)!)))
         next.keyEquivalentModifierMask = [.command]
-        let prev = item("Previous",
-                        #selector(prevAction),
-                        String(Character(UnicodeScalar(NSLeftArrowFunctionKey)!)),
-                        symbol: "backward.fill")
+        let prev = item("Previous", #selector(prevAction), String(Character(UnicodeScalar(NSLeftArrowFunctionKey)!)))
         prev.keyEquivalentModifierMask = [.command]
-        let repeat_ = item("Repeat", #selector(toggleRepeat), "r", symbol: "repeat")
-        let shuffle = item("Shuffle", #selector(toggleShuffle), "s", symbol: "shuffle")
-        let jump = item("Jump to File…", #selector(presentJumpToFileWindow), "j", symbol: "magnifyingglass")
+        let repeat_ = item("Repeat", #selector(toggleRepeat), "r")
+        let shuffle = item("Shuffle", #selector(toggleShuffle), "s")
+        let jump = item("Jump to File…", #selector(presentJumpToFileWindow), "j")
         jump.keyEquivalentModifierMask = [.command]
 
         // View
-        let showPlayer = item("Show Player", #selector(showPlayerAction), "1", symbol: "play.rectangle")
-        let showEQ = item("Show Equalizer", #selector(toggleEQ), "2", symbol: "slider.horizontal.3")
+        let showPlayer = item("Show Player", #selector(showPlayerAction), "1")
+        let showEQ = item("Show Equalizer", #selector(toggleEQ), "2")
         showEQ.state = state.eqVisible ? .on : .off
-        let showPL = item("Show Playlist", #selector(togglePL), "3", symbol: "list.bullet")
+        let showPL = item("Show Playlist", #selector(togglePL), "3")
         showPL.state = state.playlistVisible ? .on : .off
-        let alwaysOnTop = item("Always on Top", #selector(toggleAlwaysOnTop), "t", symbol: "pin")
+        let alwaysOnTop = item("Always on Top", #selector(toggleAlwaysOnTop), "t")
         alwaysOnTop.keyEquivalentModifierMask = [.command, .shift]
         alwaysOnTop.state = state.alwaysOnTop ? .on : .off
-        let doubleSize = item("Double Size",
-                              #selector(toggleDoubleSize),
-                              "d",
-                              symbol: "arrow.up.left.and.arrow.down.right")
+        let doubleSize = item("Double Size", #selector(toggleDoubleSize), "d")
         doubleSize.keyEquivalentModifierMask = [.command, .shift]
         doubleSize.state = state.doubleSize ? .on : .off
-        let autoPlay = item("AutoPlay", #selector(toggleAutoPlay), "", symbol: "")
+        let autoPlay = item("AutoPlay", #selector(toggleAutoPlay), "")
         autoPlay.state = state.autoPlay ? .on : .off
-        let loadSkin = item("Load Skin…", #selector(loadSkinAction), "S", symbol: "paintpalette")
+        let loadSkin = item("Load Skin…", #selector(loadSkinAction), "S")
         loadSkin.keyEquivalentModifierMask = [.command, .shift]
 
         return AppMenuItems(
