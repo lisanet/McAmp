@@ -566,7 +566,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - System Tray
     private func setupStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        statusItem.button?.title = "♪"
+        if let button = statusItem.button {
+                button.image = NSImage(systemSymbolName: "dot.radiowaves.left.and.right",
+                                       accessibilityDescription: "McAmp")
+                button.image?.isTemplate = true
+            }
 
         let menu = NSMenu()
         
