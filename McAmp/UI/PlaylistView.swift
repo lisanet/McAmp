@@ -54,6 +54,8 @@ class PlaylistView: NSView {
     var onTitleBarDragEnded: ((NSPoint) -> Void)?
     private var dockingDragActive = false
     
+    private let closeHitZone = HitZone()
+    var onClose: (() -> Void)?
     private let shadedHitZone = HitZone()
     var onShadeChanged: ((Bool) -> Void)?
     var isShaded: Bool = false {
@@ -77,6 +79,9 @@ class PlaylistView: NSView {
     required init?(coder: NSCoder) { fatalError() }
 
     private func setupSubviews() {
+        addSubview(closeHitZone)
+        let closeClick = NSClickGestureRecognizer(target: self, action: #selector(handleSkinnedClose))
+        closeHitZone.addGestureRecognizer(closeClick)
         addSubview(shadedHitZone)
         let shadedClick = NSClickGestureRecognizer(target: self, action: #selector(handleSkinnedShade))
         shadedHitZone.addGestureRecognizer(shadedClick)
@@ -133,6 +138,10 @@ class PlaylistView: NSView {
                 self?.needsDisplay = true
             }
         needsLayout = true
+    }
+
+    @objc private func handleSkinnedClose() {
+        self.onClose?()
     }
 
     @objc private func handleSkinnedShade() {
@@ -305,6 +314,7 @@ class PlaylistView: NSView {
         let hitY = h - 2 - hitSize
         //closeHitZone.frame    = NSRect(x: 264, y: hitY, width: hitSize, height: hitSize)
         // shadedHitZone.frame   = NSRect(x: 254, y: hitY, width: hitSize, height: hitSize)
+        closeHitZone.frame    = NSRect(x: w - 11, y: hitY, width: hitSize, height: hitSize)
         shadedHitZone.frame   = NSRect(x: w - 21, y: hitY, width: hitSize, height: hitSize)
         //minimizeHitZone.frame = NSRect(x: 244, y: hitY, width: hitSize, height: hitSize)
         //menuHitZone.frame     = NSRect(x: 6,   y: hitY, width: hitSize, height: hitSize)
@@ -645,7 +655,7 @@ class PlaylistView: NSView {
         let point = convert(event.locationInWindow, from: nil)
 
         // Don't drag from close/minimize/menu hit-zones
-        if shadedHitZone.frame.contains(point) {
+        if closeHitZone.frame.contains(point) || shadedHitZone.frame.contains(point) {
             super.mouseDown(with: event)
             return
         }

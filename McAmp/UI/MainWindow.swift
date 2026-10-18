@@ -239,6 +239,9 @@ class MainWindow: NSWindow {
         equalizerView.onShadeChanged = { [weak self] _ in self?.applyEqShadeState() }
         playlistView.onShadeChanged = { [weak self] _ in self?.applyPlaylistShadeState() }
         
+        equalizerView.onClose = { [weak self] in self?.showEqualizer = false }
+        playlistView.onClose = { [weak self] in self?.showPlaylist = false}
+        
         // Initial classic Winamp stack: MAIN -> EQ -> PLAYLIST.
         dockingController.dock(.equalizer, to: .main)
         dockingController.dock(.playlist, to: .equalizer)

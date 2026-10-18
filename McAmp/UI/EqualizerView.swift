@@ -53,6 +53,8 @@ class EqualizerView: NSView {
     var onTitleBarDragChanged: ((NSPoint) -> Void)?
     var onTitleBarDragEnded: ((NSPoint) -> Void)?
 
+    private let closeHitZone = HitZone()
+    var onClose: (() -> Void)?
     private let shadedHitZone = HitZone()
     var onShadeChanged: ((Bool) -> Void)?
     var isShaded: Bool = false {
@@ -84,6 +86,9 @@ class EqualizerView: NSView {
     required init?(coder: NSCoder) { fatalError() }
 
     private func setupSubviews() {
+        addSubview(closeHitZone)
+        let closeClick = NSClickGestureRecognizer(target: self, action: #selector(handleSkinnedClose))
+        closeHitZone.addGestureRecognizer(closeClick)
         addSubview(shadedHitZone)
         let shadedClick = NSClickGestureRecognizer(target: self, action: #selector(handleSkinnedShade))
         shadedHitZone.addGestureRecognizer(shadedClick)
@@ -139,6 +144,10 @@ class EqualizerView: NSView {
         onButton.spriteKeyProvider = { active, pressed in .eqOnButton(active: active, pressed: pressed) }
         autoButton.spriteKeyProvider = { active, pressed in .eqAutoButton(active: active, pressed: pressed) }
         presetsButton.spriteKeyProvider = { _, pressed in .eqPresetsButton(pressed: pressed) }
+    }
+
+    @objc private func handleSkinnedClose() {
+        self.onClose?()
     }
 
     @objc private func handleSkinnedShade() {
@@ -202,7 +211,7 @@ class EqualizerView: NSView {
         let h = bounds.height                 // 116 or 14
         let hitSize: CGFloat = 10
         let hitY = h - 2 - hitSize
-        //closeHitZone.frame    = NSRect(x: 264, y: hitY, width: hitSize, height: hitSize)
+        closeHitZone.frame    = NSRect(x: 264, y: hitY, width: hitSize, height: hitSize)
         shadedHitZone.frame   = NSRect(x: 254, y: hitY, width: hitSize, height: hitSize)
         //minimizeHitZone.frame = NSRect(x: 244, y: hitY, width: hitSize, height: hitSize)
         //menuHitZone.frame     = NSRect(x: 6,   y: hitY, width: hitSize, height: hitSize)
@@ -434,7 +443,7 @@ class EqualizerView: NSView {
         let point = convert(event.locationInWindow, from: nil)
         guard point.y >= bounds.height - 14 else { super.mouseDown(with: event); return }
         // Don't drag from close/minimize/menu hit-zones
-        if shadedHitZone.frame.contains(point) {
+        if closeHitZone.frame.contains(point) || shadedHitZone.frame.contains(point) {
             super.mouseDown(with: event)
             return
         }
