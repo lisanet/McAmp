@@ -125,9 +125,11 @@ class MainWindow: NSWindow {
         didSet {
             mainPlayerView.isEQActive = showEqualizer
             if showEqualizer {
+                dockingController.show(.equalizer)
                 equalizerWindow.order(.below, relativeTo: windowNumber)
                 bringAllWindowsToFront(prioritizing: self)
             } else {
+                dockingController.hide(.equalizer)
                 equalizerWindow.orderOut(nil)
             }
         }
@@ -137,10 +139,12 @@ class MainWindow: NSWindow {
         didSet {
             mainPlayerView.isPLActive = showPlaylist
             if showPlaylist {
+                dockingController.show(.playlist)
                 let anchor = showEqualizer ? equalizerWindow.windowNumber : windowNumber
                 playlistWindow.order(.below, relativeTo: anchor)
                 bringAllWindowsToFront(prioritizing: self)
             } else {
+                dockingController.hide(.playlist)
                 playlistWindow.orderOut(nil)
             }
         }
@@ -205,6 +209,15 @@ class MainWindow: NSWindow {
             defer: false
         )
 
+        dockingController.isHiddenProvider = { [weak self] id in
+            guard let self else { return false }
+            switch id {
+            case .equalizer: return !self.showEqualizer
+            case .playlist:  return !self.showPlaylist
+            case .main:      return false
+            }
+        }
+        
         isMovableByWindowBackground = false
         level = .normal
         isOpaque = true
@@ -263,6 +276,13 @@ class MainWindow: NSWindow {
          applyEqShadeState()
          applyPlaylistGeometry(keepingTopLeft: true)
 
+        let restored = dockingController.restoreLayout(layout)
+        if restored {
+            if !showEqualizer { dockingController.hide(.equalizer) }
+            if !showPlaylist  { dockingController.hide(.playlist) }
+        }
+       
+        
          return dockingController.restoreLayout(layout)
     }
 

@@ -5,6 +5,8 @@ enum DockWindowID: CaseIterable, Hashable {
     case main, equalizer, playlist
 }
 
+enum DockSide { case below, above, left, right }
+
 private final class DockPreviewView: NSView {
     override func draw(_ dirtyRect: NSRect) {
         NSColor.controlAccentColor.withAlphaComponent(0.16).setFill()
@@ -49,7 +51,8 @@ final class WindowDockingController {
     private var mainMoveObserver: NSObjectProtocol?
     private var lastMainOrigin: NSPoint = .zero
     private var movingGroupInternally = false
-
+    var isHiddenProvider: (DockWindowID) -> Bool = { _ in false }
+    
     deinit {
         if let mainMoveObserver { NotificationCenter.default.removeObserver(mainMoveObserver) }
     }
@@ -203,7 +206,7 @@ final class WindowDockingController {
 
         // A dragged EQ+playlist group needs an outline for BOTH windows.
         for member in draggedGroup {
-            guard let frame = dragStartFrames[member] else { continue }
+            guard windows[member]?.isVisible == true, let frame = dragStartFrames[member] else { continue }
             let preview = DockPreviewWindow(frame: frame)
             preview.level = windows[member]?.level ?? .normal
             preview.orderFront(nil)
@@ -253,6 +256,63 @@ final class WindowDockingController {
         }
     }
 
+    /// Kinder von `id` erben Elternfenster und Seite von `id` und rücken nach.
+    /// Hat `id` ein Kind, ist sein Elternfenster wegen der Topologie immer MAIN.
+    /// Idempotent: nach dem ersten Aufruf hat `id` keine Kinder mehr.
+    func hide(_ id: DockWindowID) {
+        guard id != .main, let p = parent[id],
+              let hidingFrame = windows[id]?.frame, let parentFrame = windows[p]?.frame else { return }
+        let s = side(of: hidingFrame, relativeTo: parentFrame) ?? .below
+        for child in parent.filter({ $0.value == id }).map(\.key) {
+            guard let cw = windows[child] else { continue }
+            parent[child] = p
+            move(child, toOrigin: attachedOrigin(size: cw.frame.size, to: parentFrame, side: s))
+        }
+    }
+
+    /// Liegt ein sichtbares Geschwisterfenster auf dem Platz von `id`, wird es
+    /// unter `id` gehängt und auf dessen Seite dahinter zurückgeschoben.
+    /// Sonst passiert nichts: `id` erscheint an seinem (mitgewanderten) Frame.
+    func show(_ id: DockWindowID) {
+        guard id != .main, let p = parent[id], let hiddenFrame = windows[id]?.frame,
+              let parentFrame = windows[p]?.frame else { return }
+        let s = side(of: hiddenFrame, relativeTo: parentFrame) ?? .below
+        let slot = hiddenFrame.insetBy(dx: 1, dy: 1)
+        guard let other = DockWindowID.allCases.first(where: {
+                  $0 != id && !isHiddenProvider($0) && parent[$0] == p
+                  && (windows[$0]?.frame.intersects(slot) ?? false)
+              }), let otherFrame = windows[other]?.frame else { return }
+        parent[other] = id                       // bei 3 Fenstern immer eine gültige Topologie
+        move(other, toOrigin: attachedOrigin(size: otherFrame.size, to: hiddenFrame, side: s))
+    }
+    
+    private func side(of child: NSRect, relativeTo parent: NSRect) -> DockSide? {
+        let tol: CGFloat = 2
+        let hOverlap = child.maxX > parent.minX && child.minX < parent.maxX
+        let vOverlap = child.maxY > parent.minY && child.minY < parent.maxY
+        if abs(child.maxY - parent.minY) <= tol && hOverlap { return .below }
+        if abs(child.minY - parent.maxY) <= tol && hOverlap { return .above }
+        if abs(child.minX - parent.maxX) <= tol && vOverlap { return .right }
+        if abs(child.maxX - parent.minX) <= tol && vOverlap { return .left }
+        return nil
+    }
+    
+    private func attachedOrigin(size: NSSize, to parent: NSRect, side: DockSide) -> NSPoint {
+        switch side {
+        case .below: return NSPoint(x: parent.minX, y: parent.minY - size.height)
+        case .above: return NSPoint(x: parent.minX, y: parent.maxY)
+        case .right: return NSPoint(x: parent.maxX, y: parent.maxY - size.height)
+        case .left:  return NSPoint(x: parent.minX - size.width, y: parent.maxY - size.height)
+        }
+    }
+    
+    private func move(_ id: DockWindowID, toOrigin o: NSPoint) {
+        guard let w = windows[id] else { return }
+        let delta = NSPoint(x: o.x - w.frame.minX, y: o.y - w.frame.minY)
+        w.setFrameOrigin(o)
+        moveDockedChildren(of: id, by: delta)
+    }
+    
     private func applyDelta(_ delta: NSPoint) {
         movingGroupInternally = true
         defer {
