@@ -84,6 +84,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         playlistManager.autoPlay = appState.autoPlay
         if playlistManager.autoPlay { playlistManager.autoPlayOnStartup = true } // clear playlist if autoplay
         
+        WinampTheme.scale = appState.scale
+        
         // Create window
         mainWindow = MainWindow()
         mainWindow.bindToModels(audioEngine: audioEngine, playlistManager: playlistManager)

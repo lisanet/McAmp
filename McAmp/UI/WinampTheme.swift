@@ -23,8 +23,7 @@ final class WinampTheme {
     static let greenBright = NSColor(hex: 0x00E000)
 
     // MARK: - Scale
-    static let baseScale: CGFloat = 1.3
-    static var scale: CGFloat = 1.3
+    static var scale: CGFloat = 1.4
 
     // MARK: - Dimensions
     static let windowWidth: CGFloat = 275

@@ -31,6 +31,7 @@ struct AppState: Codable {
     var windowY: Double = 100
     var alwaysOnTop: Bool = false
     var autoPlay: Bool = false
+    var scale: CGFloat = 1.4
     var lastTrackIndex: Int = -1
     var lastPlaybackPosition: Double = 0
     var skinPath: String?
@@ -132,6 +133,7 @@ class StateManager {
         state.showPlaylist = showPlaylist
         state.alwaysOnTop = alwaysOnTop
         state.autoPlay = autoPlay
+        state.scale = WinampTheme.scale
         state.volume = audioEngine.volume
         state.balance = audioEngine.balance
         state.repeatMode = audioEngine.repeatMode.rawValue
