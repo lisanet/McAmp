@@ -9,9 +9,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var mainWindow: MainWindow!
     var statusItem: NSStatusItem!
     var hotKeyManager: HotKeyManager!
-    private weak var alwaysOnTopMenuItem: NSMenuItem?
-    private weak var doubleSizeMenuItem: NSMenuItem?
-    private weak var autoPlayMenuItem: NSMenuItem?
     private var jumpToFileWindow: JumpToFileWindow?
     private var jumpToFileMonitor: Any?
     private var lastSkinDirectory: URL? {
@@ -218,7 +215,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     /// can never drift apart in structure or contents.
     struct AppMenuState {
         var alwaysOnTop: Bool
-        var doubleSize: Bool
+        // var doubleSize: Bool
+        var scaling: CGFloat
         var autoPlay: Bool
         var eqVisible: Bool
         var playlistVisible: Bool
@@ -234,9 +232,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let controls: [NSMenuItem]
         let view: [NSMenuItem]
         let quit: [NSMenuItem]
-        let alwaysOnTopItem: NSMenuItem
-        let doubleSizeItem: NSMenuItem
-        let autoPlayItem: NSMenuItem
     }
 
     /// Single source of truth for application menu structure. Items use
@@ -290,9 +285,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let alwaysOnTop = item("Always on Top", #selector(toggleAlwaysOnTop), "t")
         alwaysOnTop.keyEquivalentModifierMask = [.command, .shift]
         alwaysOnTop.state = state.alwaysOnTop ? .on : .off
-        let doubleSize = item("Double Size", #selector(toggleDoubleSize), "d")
-        doubleSize.keyEquivalentModifierMask = [.command, .shift]
-        doubleSize.state = state.doubleSize ? .on : .off
+        
+        let scalingValues: [(name: String, scale: CGFloat)] = [("Tiny", 1.0), ("Standard", 1.3), ("Medium", 1.4), ("Large", 1.5), ("Double", 2.0)]
+        let scalingItem = NSMenuItem(title: "Scaling...", action: nil, keyEquivalent: "")
+        let scalingSubMenu = NSMenu(title: "Scaling")
+        for (name, scale) in scalingValues {
+            let mi = item(String(format: "%@ (%.1f)", name, scale), #selector(setScaling(_:)), "")
+            mi.representedObject = scale
+            mi.state = abs(WinampTheme.scale - scale) < 0.001 ? .on : .off
+            scalingSubMenu.addItem(mi)
+        }
+        scalingItem.submenu = scalingSubMenu
+
         let autoPlay = item("AutoPlay", #selector(toggleAutoPlay), "")
         autoPlay.state = state.autoPlay ? .on : .off
         let loadSkin = item("Load Skin…", #selector(loadSkinAction), "S")
@@ -307,18 +311,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             controls: [playPause, stop, next, prev, .separator(),
                        repeat_, shuffle, autoPlay, .separator(), jump],
             view: [showPlayer, showEQ, showPL, .separator(),
-                   alwaysOnTop, doubleSize],
-            quit: [hide, quit],
-            alwaysOnTopItem: alwaysOnTop,
-            doubleSizeItem: doubleSize,
-            autoPlayItem: autoPlay
+                   alwaysOnTop, scalingItem],
+            quit: [hide, quit]
         )
     }
 
     private func currentMenuState() -> AppMenuState {
         AppMenuState(
             alwaysOnTop: mainWindow?.alwaysOnTop ?? false,
-            doubleSize: WinampTheme.scale > WinampTheme.baseScale + 0.01,
+            scaling: WinampTheme.scale,
             autoPlay: playlistManager?.autoPlay ?? false,
             eqVisible: mainWindow?.showEqualizer ?? false,
             playlistVisible: mainWindow?.showPlaylist ?? false
@@ -342,9 +343,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func setupMainMenu() {
         let items = AppDelegate.buildAppMenuItems(state: currentMenuState())
-        self.alwaysOnTopMenuItem = items.alwaysOnTopItem
-        self.doubleSizeMenuItem = items.doubleSizeItem
-        self.autoPlayMenuItem = items.autoPlayItem
 
         let mainMenu = NSMenu()
         // The menu bar shows each top-level submenu's title (the app menu is
@@ -485,20 +483,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func toggleAlwaysOnTop() {
         mainWindow.alwaysOnTop.toggle()
-        alwaysOnTopMenuItem?.state = mainWindow.alwaysOnTop ? .on : .off
 
         var state = stateManager.loadAppState()
         state.alwaysOnTop = mainWindow.alwaysOnTop
         stateManager.saveAppState(state)
     }
 
-    @objc func toggleDoubleSize() {
-        // Classic Winamp "Double Size" is literally 2× the native 275×116, not 2× the
-        // current base scale. Toggle between baseScale (1.3) and 2.0.
-        let isDouble = WinampTheme.scale > WinampTheme.baseScale + 0.01
-        WinampTheme.scale = isDouble ? WinampTheme.baseScale : 2.0
+    
+    @objc private func setScaling(_ sender: NSMenuItem) {
+        guard let scale = sender.representedObject as? Double else {
+            return
+        }
+        
+        WinampTheme.scale = scale
         mainWindow.recalculateSize()
-
         // Clamp the window to the current screen's visible frame so Double Size
         // can't push it off the edge when it was close to one.
         if let screen = mainWindow.screen ?? NSScreen.main {
@@ -508,17 +506,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             if frame.minX < visible.minX { frame.origin.x = visible.minX }
             if frame.maxY > visible.maxY { frame.origin.y = visible.maxY - frame.height }
             if frame.minY < visible.minY { frame.origin.y = visible.minY }
-            if frame != mainWindow.frame {
-                mainWindow.setFrameOrigin(frame.origin)
-            }
+            if frame != mainWindow.frame {mainWindow.setFrameOrigin(frame.origin)}
         }
-
-        doubleSizeMenuItem?.state = (WinampTheme.scale > WinampTheme.baseScale + 0.01) ? .on : .off
+        
     }
     
     @objc private func toggleAutoPlay() {
         playlistManager.autoPlay.toggle()
-        autoPlayMenuItem?.state = playlistManager.autoPlay ? .on : .off
         
         var state = stateManager.loadAppState()
         state.autoPlay = playlistManager.autoPlay
@@ -633,8 +627,9 @@ extension AppDelegate: NSMenuItemValidation {
             menuItem.state = (mainWindow?.showPlaylist ?? false) ? .on : .off
         case #selector(toggleAlwaysOnTop):
             menuItem.state = (mainWindow?.alwaysOnTop ?? false) ? .on : .off
-        case #selector(toggleDoubleSize):
-            menuItem.state = (WinampTheme.scale > WinampTheme.baseScale + 0.01) ? .on : .off
+        case #selector(setScaling):
+            let scale = menuItem.representedObject as? CGFloat ?? 0
+            menuItem.state = abs(WinampTheme.scale - scale) < 0.001 ? .on : .off
         case #selector(toggleAutoPlay):
             menuItem.state = (playlistManager?.autoPlay ?? false) ? .on : .off
         case #selector(importFromMusicLibraryAction):
@@ -666,3 +661,4 @@ extension AppDelegate: JumpToFileDelegate {
         playlistManager.playTrack(at: index)
     }
 }
+

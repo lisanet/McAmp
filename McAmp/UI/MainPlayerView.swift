@@ -539,11 +539,6 @@ class MainPlayerView: NSView {
         playlistView?.nowPlayingText = newText
         playlistView?.nowPlayingDuration = track.formattedDuration
     }
-
-    private func doubleSize() {
-        guard let delegate = NSApp.delegate as? AppDelegate else { return }
-        delegate.toggleDoubleSize()
-    }
     
     private func showWindowMenu() {
         guard let delegate = NSApp.delegate as? AppDelegate else { return }
