@@ -1,36 +1,34 @@
 import Cocoa
+import Combine
 
 class PlayStateIndicator: NSView {
     var state: PlayState = .stopped {
         didSet { needsDisplay = true }
     }
 
+    private var skinObserver: AnyCancellable?
+ 
     override init(frame: NSRect) {
         super.init(frame: frame)
+        skinObserver = SkinManager.shared.$currentSkin
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.needsDisplay = true }
         wantsLayer = true
     }
     required init?(coder: NSCoder) { fatalError() }
 
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
-        let b = bounds.insetBy(dx: 1, dy: 1)
-        WinampTheme.greenBright.setFill()
-        WinampTheme.greenBright.setStroke()
 
+        var stateImg: NSImage?
         switch state {
         case .playing:
-            let path = NSBezierPath()
-            path.move(to: NSPoint(x: b.minX, y: b.minY))
-            path.line(to: NSPoint(x: b.minX, y: b.maxY))
-            path.line(to: NSPoint(x: b.maxX, y: b.midY))
-            path.close()
-            path.fill()
+            stateImg = WinampTheme.sprite(.playImg)
         case .paused:
-            let barW = b.width * 0.35
-            NSRect(x: b.minX, y: b.minY, width: barW, height: b.height).fill()
-            NSRect(x: b.maxX - barW, y: b.minY, width: barW, height: b.height).fill()
+            stateImg = WinampTheme.sprite(.pauseImg)
         case .stopped:
-            NSRect(x: b.minX, y: b.minY, width: b.width, height: b.height).fill()
+            stateImg = WinampTheme.sprite(.emptyImg)
         }
+        stateImg?.draw(in: NSRect(x: 0, y: 0, width: 9, height: 9))
     }
 }

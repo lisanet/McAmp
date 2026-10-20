@@ -60,7 +60,7 @@ class MainPlayerView: NSView {
 
     private var bodyViews: [NSView] {
         [timeDisplay, spectrumView, lcdDisplay, seekSlider, volumeSlider, balanceSlider,
-         transportBar, shuffleButton, repeatButton, eqButton, plButton, githubHitZone]
+         transportBar, shuffleButton, repeatButton, eqButton, plButton, playIndicator, githubHitZone]
     }
     
     // titleBar buttons
@@ -266,7 +266,6 @@ class MainPlayerView: NSView {
     
     private func layoutShaded() {
         bodyViews.forEach { $0.isHidden = true }
-        playIndicator.isHidden = true
         
         titleBarButtons.frame = NSRect(x: 0, y: bounds.height - 14, width: bounds.width, height: 14)
         miniControls.isHidden = false
@@ -287,8 +286,8 @@ class MainPlayerView: NSView {
         miniSpectrum.isHidden = true
         miniSeekSlider.isHidden = true
         
-        // FIXME: implement play state sprites
-        playIndicator.isHidden = true
+        // 26, 28 -> 26, 79
+        playIndicator.frame = NSRect(x: 26, y: 79, width: 9, height: 9)
 
         titleBarButtons.frame = NSRect(x: 0, y: bounds.height - 14, width: bounds.width, height: 14)
         // 7-segment time (webamp #time at 39,26,59,13 → y=77; widened 1px to fit last digit)

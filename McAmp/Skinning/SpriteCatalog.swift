@@ -16,6 +16,12 @@ enum SpriteKey: Hashable {
     case stop(pressed: Bool)
     case next(pressed: Bool)
     case eject(pressed: Bool)
+    
+    // play, pause, stop indicator
+    case playImg
+    case pauseImg
+    case stopImg
+    case emptyImg
 
     // numbers
     case digit(Int)            // 0–9
@@ -113,6 +119,17 @@ enum SpriteCoordinates {
         case .eject(let pressed):
             return SpriteInfo(sheet: "cbuttons", rect: CGRect(x: 114, y: pressed ? 16 : 0, width: 22, height: 16))
 
+        // MARK: States
+        case .playImg:
+            return SpriteInfo(sheet: "playpaus", rect: CGRect(x: 0, y: 0, width: 9, height: 9))
+        case .pauseImg:
+            return SpriteInfo(sheet: "playpaus", rect: CGRect(x: 9, y: 0, width: 9, height: 9))
+        case .stopImg:
+            return SpriteInfo(sheet: "playpaus", rect: CGRect(x: 18, y: 0, width: 9, height: 9))
+        case .emptyImg:
+            return SpriteInfo(sheet: "playpaus", rect: CGRect(x: 27, y: 0, width: 9, height: 9))
+
+            
         // MARK: numbers — 9×13 each, 0–9 at x = n*9, y = 0
         case .digit(let n):
             let d = max(0, min(9, n))
