@@ -21,6 +21,10 @@ class MainPlayerView: NSView {
         get { plButton.isActive }
         set { plButton.isActive = newValue }
     }
+    var isShuffle: Bool {
+        get { shuffleButton.isActive }
+        set { shuffleButton.isActive = newValue}
+    }
     var isShaded: Bool {
         get { titleBarButtons.isShaded }
         set { titleBarButtons.isShaded = newValue }
@@ -143,14 +147,16 @@ class MainPlayerView: NSView {
         addSubview(plButton)
 
         // Wire skin sprite keys for the four toggle buttons
-        shuffleButton.spriteKeyProvider = { active, pressed in .shuffleButton(active: active, pressed: pressed) }
+        shuffleButton.spriteKeyProvider = { isShuffle, pressed in .shuffleButton(active: isShuffle, pressed: pressed) }
         repeatButton.spriteKeyProvider  = { active, pressed in .repeatButton(active: active, pressed: pressed) }
         eqButton.spriteKeyProvider      = { active, pressed in .eqToggleButton(active: active, pressed: pressed) }
         plButton.spriteKeyProvider      = { active, pressed in .plToggleButton(active: active, pressed: pressed) }
 
         // Button actions
         shuffleButton.onClick = { [weak self] in
-            self?.playlistManager?.shuffleTracks()
+            self?.isShuffle.toggle()
+            // self?.playlistManager?.shuffleTracks()
+            self?.playlistManager?.isShuffle = self?.isShuffle ?? false
         }
         repeatButton.onClick = { [weak self] in
             guard let engine = self?.audioEngine else { return }

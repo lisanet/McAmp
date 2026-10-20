@@ -23,6 +23,19 @@ class PlaylistManager: ObservableObject {
     var autoPlay: Bool = false
     var autoPlayOnStartup: Bool = false
     
+    var isShuffle = false {
+        didSet {
+            playedInShuffle.removeAll()
+            shuffleHistory.removeAll()
+            if isShuffle, let t = currentTrack {
+                playedInShuffle.insert(t.id)
+                shuffleHistory.append(t.id)
+            }
+        }
+    }
+    private var playedInShuffle: Set<UUID> = []   // in dieser Runde schon gespielt
+    private var shuffleHistory: [UUID] = []       // für „Previous“
+    
     var currentTrack: Track? {
         guard currentIndex >= 0, currentIndex < tracks.count else { return nil }
         return tracks[currentIndex]
@@ -404,6 +417,8 @@ class PlaylistManager: ObservableObject {
         }
         tracks.removeAll()
         currentIndex = -1
+        playedInShuffle.removeAll()
+        shuffleHistory.removeAll()
     }
 
     // MARK: - Playback Navigation
@@ -414,6 +429,10 @@ class PlaylistManager: ObservableObject {
         }
         currentIndex = index
         let track = tracks[index]
+        if isShuffle {
+            playedInShuffle.insert(track.id)
+            if shuffleHistory.last != track.id { shuffleHistory.append(track.id) }
+        }
         debugLog("⚡ at: \(index)) — \(track.url)")
         audioEngine?.load(url: track.url, play: true, startTime: track.cueStart, endTime: track.cueEnd)
         prepareGaplessChain(after: index)
@@ -423,7 +442,7 @@ class PlaylistManager: ObservableObject {
     /// one just started, schedule it back-to-back on the engine so the handoff is
     /// sample-accurate.
     private func prepareGaplessChain(after index: Int) {
-        guard index + 1 < tracks.count else { return }
+        guard !isShuffle, index + 1 < tracks.count else { return }
         let cur = tracks[index]
         let next = tracks[index + 1]
         guard cur.isCueVirtual, next.isCueVirtual, cur.url == next.url else { return }
@@ -431,6 +450,26 @@ class PlaylistManager: ObservableObject {
         _ = audioEngine?.chainNextSegment(url: next.url, startTime: start, endTime: next.cueEnd)
     }
 
+    /// Index des nächsten Tracks (Shuffle oder linear). nil = Ende der Liste.
+    private func nextIndexToPlay() -> Int? {
+        if isShuffle { return nextShuffleIndex() }
+        let next = currentIndex + 1
+        if next < tracks.count { return next }
+        return audioEngine?.repeatMode == .playlist ? 0 : nil
+    }
+
+    private func nextShuffleIndex() -> Int? {
+        var candidates = tracks.indices.filter { !playedInShuffle.contains(tracks[$0].id) }
+        if candidates.isEmpty {
+            // Alle gespielt: nur bei Repeat-Playlist eine neue Runde starten
+            guard audioEngine?.repeatMode == .playlist else { return nil }
+            playedInShuffle.removeAll()
+            candidates = tracks.indices.filter { $0 != currentIndex }
+            if candidates.isEmpty { return currentIndex >= 0 ? currentIndex : 0 }
+        }
+        return candidates.randomElement()
+    }
+    
     // MARK: - CUE sheets
 
     /// Load a .cue sheet, resolve its virtual tracks, and append them to the playlist.
@@ -445,18 +484,11 @@ class PlaylistManager: ObservableObject {
     }
 
     func playNext() {
-        debugLog("⚡ currentIndex=\(currentIndex), tracks.count=\(tracks.count)")
         guard !tracks.isEmpty else { return }
-
-        let nextIndex = currentIndex + 1
-        if nextIndex >= tracks.count {
-            if audioEngine?.repeatMode == .playlist {
-                playTrack(at: 0)
-            } else {
-                audioEngine?.stop()
-            }
+        if let next = nextIndexToPlay() {
+            playTrack(at: next)
         } else {
-            playTrack(at: nextIndex)
+            audioEngine?.stop()
         }
     }
 
@@ -468,6 +500,17 @@ class PlaylistManager: ObservableObject {
             return
         }
 
+        if isShuffle {
+            shuffleHistory.removeLast(shuffleHistory.isEmpty ? 0 : 1)   // aktuellen Track verwerfen
+            while let id = shuffleHistory.last {
+                if let i = tracks.firstIndex(where: { $0.id == id }) {
+                    playTrack(at: i)
+                    return
+                }
+                shuffleHistory.removeLast()   // Track wurde inzwischen gelöscht
+            }
+        }
+        
         let prevIndex = currentIndex - 1
         if prevIndex < 0 {
             playTrack(at: tracks.count - 1)
@@ -514,7 +557,7 @@ class PlaylistManager: ObservableObject {
         guard tracks.count > 1 else { return }
         let currentTrack = currentIndex >= 0 && currentIndex < tracks.count ? tracks[currentIndex] : nil
         tracks.shuffle()
-        if let currentTrack = currentTrack {
+        if let currentTrack {
             // Match by id, not URL — cue virtual tracks and duplicate entries
             // share URLs, and grabbing the first same-URL entry desyncs
             // auto-advance from the actually playing instance.
@@ -578,13 +621,8 @@ class PlaylistManager: ObservableObject {
         guard audioEngine?.repeatMode != .track else { return }
         guard !tracks.isEmpty else { return }
 
-        let nextIndex = currentIndex + 1
-        if nextIndex >= tracks.count {
-            if audioEngine?.repeatMode == .playlist {
-                playTrack(at: 0)
-            } else {
-                audioEngine?.stop()
-            }
+        guard let nextIndex = nextIndexToPlay() else {
+            audioEngine?.stop()
             return
         }
 
