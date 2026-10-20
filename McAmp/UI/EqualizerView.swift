@@ -32,9 +32,9 @@ struct EQPreset {
 }
 
 class EqualizerView: NSView {
-    private let onButton = WinampButton(title: "ON", style: .toggle)
-    private let autoButton = WinampButton(title: "AUTO", style: .toggle)
-    private let presetsButton = WinampButton(title: "PRESETS", style: .action)
+    private let onButton = WinampButton(style: .toggle)
+    private let autoButton = WinampButton(style: .toggle)
+    private let presetsButton = WinampButton(style: .action)
     private let preampSlider = WinampSlider(style: .eqBand, isVertical: true)
     private let responseView = EQResponseView()
     private var bandSliders: [WinampSlider] = []

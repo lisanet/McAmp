@@ -55,7 +55,7 @@ class TransportBar: NSView {
     }
 
     private func makeButtons() -> [WinampButton] {
-        (0..<6).map { _ in WinampButton(title: "", style: .transport) }
+        (0..<6).map { _ in WinampButton(style: .transport) }
     }
 
     override func layout() {

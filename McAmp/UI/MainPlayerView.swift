@@ -48,10 +48,10 @@ class MainPlayerView: NSView {
     }
 
     // Toggle buttons
-    private let shuffleButton = WinampButton(title: "", style: .toggle)
-    private let repeatButton = WinampButton(title: "", style: .toggle)
-    private let eqButton = WinampButton(title: "EQ", style: .toggle)
-    private let plButton = WinampButton(title: "PL", style: .toggle)
+    private let shuffleButton = WinampButton(style: .toggle)
+    private let repeatButton = WinampButton(style: .toggle)
+    private let eqButton = WinampButton(style: .toggle)
+    private let plButton = WinampButton(style: .toggle)
 
     // Play state indicator
     private let playIndicator = PlayStateIndicator()

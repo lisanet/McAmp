@@ -8,7 +8,7 @@ enum WinampButtonStyle {
 }
 
 class WinampButton: NSView {
-    var title: String = "" { didSet { needsDisplay = true } }
+    // var title: String = "" { didSet { needsDisplay = true } }
     var isActive = false { didSet { needsDisplay = true } }
     var isPressed = false { didSet { needsDisplay = true } }
     var style: WinampButtonStyle = .transport
@@ -31,9 +31,9 @@ class WinampButton: NSView {
 
     required init?(coder: NSCoder) { fatalError() }
 
-    convenience init(title: String, style: WinampButtonStyle = .action) {
+    convenience init(style: WinampButtonStyle = .action) {
         self.init(frame: .zero)
-        self.title = title
+        // self.title = title
         self.style = style
     }
 
