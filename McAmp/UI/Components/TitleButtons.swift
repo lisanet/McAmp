@@ -13,9 +13,9 @@ class TitleButtons: NSView {
     var onShadeChanged: ((Bool) -> Void)?
     var onClose: (() -> Void)?
 
-    private static let buttonSize = NSSize(width: 10, height: 10)
+    private static let buttonSize = NSSize(width: 9, height: 10)
     // coordinates as offset from right side border: logicalWidth - x
-    private static let buttonXoff: [CGFloat] = [269, 31, 21, 11]
+    private static let buttonXoff: [CGFloat] = [269, 30, 20, 11]
     var isShaded: Bool = false {
         didSet {
             guard isShaded != oldValue else { return }

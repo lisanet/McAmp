@@ -149,6 +149,19 @@ class MainWindow: NSWindow {
             }
         }
     }
+    
+    var playlistShadedPlay: Bool = false {
+        didSet {
+            guard playlistView.isShaded else { return }
+            let state = audioEngine?.playState
+            if state != .playing {
+                transport.play()
+            } else {
+                transport.pause()
+            }
+        }
+    }
+    
 
     var alwaysOnTop: Bool = false {
         didSet {
@@ -478,6 +491,10 @@ class MainWindow: NSWindow {
         playlistView.miniControls.onStop = transport.stop
         playlistView.miniControls.onNext = transport.next
         playlistView.miniControls.onEject = transport.eject
+        
+        playlistView.titleBarButtons.onMinimize = { [weak self] in
+            self?.playlistShadedPlay.toggle()
+        }
 
         mainPlayerView.onToggleEQ = { [weak self] in self?.showEqualizer.toggle() }
         mainPlayerView.onTogglePL = { [weak self] in self?.showPlaylist.toggle() }
