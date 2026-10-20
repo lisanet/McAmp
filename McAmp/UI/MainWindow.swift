@@ -235,12 +235,16 @@ class MainWindow: NSWindow {
 
         wireDragging()
 
-        mainPlayerView.onShadeChanged = { [weak self] _ in self?.applyMainShadeState() }
-        equalizerView.onShadeChanged = { [weak self] _ in self?.applyEqShadeState() }
-        playlistView.onShadeChanged = { [weak self] _ in self?.applyPlaylistShadeState() }
+        mainPlayerView.titleBarButtons.onMenu = { [weak self] in self?.mainPlayerView.showWindowMenu() }
+        mainPlayerView.titleBarButtons.onMinimize = { [weak self] in self?.mainPlayerView.window?.miniaturize(nil) }
         
-        equalizerView.onClose = { [weak self] in self?.showEqualizer = false }
-        playlistView.onClose = { [weak self] in self?.showPlaylist = false}
+        mainPlayerView.titleBarButtons.onShadeChanged = { [weak self] _ in self?.applyMainShadeState() }
+        equalizerView.titleBarButtons.onShadeChanged = { [weak self] _ in self?.applyEqShadeState() }
+        playlistView.titleBarButtons.onShadeChanged = { [weak self] _ in self?.applyPlaylistShadeState() }
+        
+        mainPlayerView.titleBarButtons.onClose = { NSApp.hide(nil) }
+        equalizerView.titleBarButtons.onClose = { [weak self] in self?.showEqualizer = false }
+        playlistView.titleBarButtons.onClose = { [weak self] in self?.showPlaylist = false}
         
         // Initial classic Winamp stack: MAIN -> EQ -> PLAYLIST.
         dockingController.dock(.equalizer, to: .main)

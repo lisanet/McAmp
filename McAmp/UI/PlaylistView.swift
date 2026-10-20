@@ -54,15 +54,10 @@ class PlaylistView: NSView {
     var onTitleBarDragEnded: ((NSPoint) -> Void)?
     private var dockingDragActive = false
     
-    private let closeHitZone = HitZone()
-    var onClose: (() -> Void)?
-    private let shadedHitZone = HitZone()
-    var onShadeChanged: ((Bool) -> Void)?
-    var isShaded: Bool = false {
-        didSet {
-            guard isShaded != oldValue else { return }
-            onShadeChanged?(isShaded)
-        }
+    let titleBarButtons = TitleButtons()
+    var isShaded: Bool {
+        get { titleBarButtons.isShaded }
+        set { titleBarButtons.isShaded = newValue }
     }
     
 
@@ -79,13 +74,7 @@ class PlaylistView: NSView {
     required init?(coder: NSCoder) { fatalError() }
 
     private func setupSubviews() {
-        addSubview(closeHitZone)
-        let closeClick = NSClickGestureRecognizer(target: self, action: #selector(handleSkinnedClose))
-        closeHitZone.addGestureRecognizer(closeClick)
-        addSubview(shadedHitZone)
-        let shadedClick = NSClickGestureRecognizer(target: self, action: #selector(handleSkinnedShade))
-        shadedHitZone.addGestureRecognizer(shadedClick)
-        
+        addSubview(titleBarButtons)
         addSubview(shadedLCD)
 
         // Table view
@@ -138,14 +127,6 @@ class PlaylistView: NSView {
                 self?.needsDisplay = true
             }
         needsLayout = true
-    }
-
-    @objc private func handleSkinnedClose() {
-        self.onClose?()
-    }
-
-    @objc private func handleSkinnedShade() {
-        isShaded.toggle()
     }
     
     private func applySkinVisibility() {
@@ -299,30 +280,17 @@ class PlaylistView: NSView {
 
     override func layout() {
         super.layout()
-        layoutTitleHitZones()
         if isShaded {
             layoutShaded()
         } else {
             layoutSkinned()
         }
     }
-
-    private func layoutTitleHitZones() {
-        let h = bounds.height
-        let w = bounds.width
-        let hitSize: CGFloat = 10
-        let hitY = h - 2 - hitSize
-        //closeHitZone.frame    = NSRect(x: 264, y: hitY, width: hitSize, height: hitSize)
-        // shadedHitZone.frame   = NSRect(x: 254, y: hitY, width: hitSize, height: hitSize)
-        closeHitZone.frame    = NSRect(x: w - 11, y: hitY, width: hitSize, height: hitSize)
-        shadedHitZone.frame   = NSRect(x: w - 21, y: hitY, width: hitSize, height: hitSize)
-        //minimizeHitZone.frame = NSRect(x: 244, y: hitY, width: hitSize, height: hitSize)
-        //menuHitZone.frame     = NSRect(x: 6,   y: hitY, width: hitSize, height: hitSize)
-    }
     
     private func layoutShaded() {
         bodyViews.forEach { $0.isHidden = true }
         let rightReserved: CGFloat = 30
+        titleBarButtons.frame = NSRect(x: 0, y: bounds.height - 14, width: bounds.width, height: 14)
         shadedLCD.frame = NSRect(x: 5, y: 0,width: max(0, bounds.width - 5 - rightReserved), height: bounds.height)
         shadedLCD.isScrolling = true
         shadedLCD.isHidden = false
@@ -342,7 +310,8 @@ class PlaylistView: NSView {
         bodyViews.forEach { $0.isHidden = false }
         shadedLCD.isScrolling = false
         shadedLCD.isHidden = true
-         
+        
+        titleBarButtons.frame = NSRect(x: 0, y: bounds.height - 14, width: bounds.width, height: 14)
         scrollView.frame = NSRect(
             x: leftW,
             y: bottomH,
@@ -653,12 +622,6 @@ class PlaylistView: NSView {
     
     override func mouseDown(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
-
-        // Don't drag from close/minimize/menu hit-zones
-        if closeHitZone.frame.contains(point) || shadedHitZone.frame.contains(point) {
-            super.mouseDown(with: event)
-            return
-        }
 
         if !isShaded, resizeHandleRect.contains(point), let begin = onResizeBegan {
             let initial = begin()

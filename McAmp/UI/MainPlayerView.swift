@@ -21,13 +21,9 @@ class MainPlayerView: NSView {
         get { plButton.isActive }
         set { plButton.isActive = newValue }
     }
-
-    var onShadeChanged: ((Bool) -> Void)?
-    var isShaded: Bool = false {
-        didSet {
-            guard isShaded != oldValue else { return }
-            onShadeChanged?(isShaded)
-        }
+    var isShaded: Bool {
+        get { titleBarButtons.isShaded }
+        set { titleBarButtons.isShaded = newValue }
     }
     
     // Subviews
@@ -67,11 +63,8 @@ class MainPlayerView: NSView {
          transportBar, shuffleButton, repeatButton, eqButton, plButton, githubHitZone]
     }
     
-    // Invisible click hit-zones for close/minimize/menu when skinned
-    private let closeHitZone = HitZone()
-    private let shadedHitZone = HitZone()
-    private let minimizeHitZone = HitZone()
-    private let menuHitZone = HitZone()
+    // titleBar buttons
+    var titleBarButtons = TitleButtons()
 
     private var cancellables = Set<AnyCancellable>()
     private var skinObserver: AnyCancellable?
@@ -101,6 +94,7 @@ class MainPlayerView: NSView {
     required init?(coder: NSCoder) { fatalError() }
 
     private func setupSubviews() {
+        addSubview(titleBarButtons)
         // shaded mode
         addSubview(miniControls)
         miniSpectrum.wantsLayer = true
@@ -166,32 +160,11 @@ class MainPlayerView: NSView {
         eqButton.onClick = { [weak self] in self?.onToggleEQ?() }
         plButton.onClick = { [weak self] in self?.onTogglePL?() }
 
-        // Click hit-zones for close/minimize/menu when skinned
-        // then, so we need invisible NSViews at the locations where main.bmp paints
-        // these buttons so the user can still interact with them).
-        addSubview(closeHitZone)
-        addSubview(shadedHitZone)
-        addSubview(minimizeHitZone)
-        addSubview(menuHitZone)
         addSubview(githubHitZone)
-        let closeClick = NSClickGestureRecognizer(target: self, action: #selector(handleSkinnedClose))
-        closeHitZone.addGestureRecognizer(closeClick)
-        let shadedClick = NSClickGestureRecognizer(target: self, action: #selector(handleSkinnedShade))
-        shadedHitZone.addGestureRecognizer(shadedClick)
-        let minimizeClick = NSClickGestureRecognizer(target: self, action: #selector(handleSkinnedMinimize))
-        minimizeHitZone.addGestureRecognizer(minimizeClick)
-        let menuClick = NSClickGestureRecognizer(target: self, action: #selector(handleSkinnedMenu))
-        menuHitZone.addGestureRecognizer(menuClick)
         let githubClick = NSClickGestureRecognizer(target: self, action: #selector(handleOpenGitHub))
         githubHitZone.addGestureRecognizer(githubClick)
     }
 
-    @objc private func handleSkinnedClose() { NSApp.hide(self) }
-    @objc private func handleSkinnedShade() {
-        isShaded.toggle()
-    }
-    @objc private func handleSkinnedMinimize() { window?.miniaturize(nil) }
-    @objc private func handleSkinnedMenu() { showWindowMenu() }
     @objc private func handleOpenGitHub() {
         if let url = URL(string: "https://github.com/lisanet/mcamp") {
             NSWorkspace.shared.open(url)
@@ -284,7 +257,6 @@ class MainPlayerView: NSView {
 
     override func layout() {
         super.layout()
-        layoutTitleHitZones()
         if isShaded {
             layoutShaded()
         } else {
@@ -292,20 +264,11 @@ class MainPlayerView: NSView {
         }
     }
     
-    private func layoutTitleHitZones() {
-        let h = bounds.height                 // 116 or 14
-        let hitSize: CGFloat = 10
-        let hitY = h - 2 - hitSize
-        closeHitZone.frame    = NSRect(x: 264, y: hitY, width: hitSize, height: hitSize)
-        shadedHitZone.frame   = NSRect(x: 254, y: hitY, width: hitSize, height: hitSize)
-        minimizeHitZone.frame = NSRect(x: 244, y: hitY, width: hitSize, height: hitSize)
-        menuHitZone.frame     = NSRect(x: 6,   y: hitY, width: hitSize, height: hitSize)
-    }
-    
     private func layoutShaded() {
         bodyViews.forEach { $0.isHidden = true }
         playIndicator.isHidden = true
         
+        titleBarButtons.frame = NSRect(x: 0, y: bounds.height - 14, width: bounds.width, height: 14)
         miniControls.isHidden = false
         miniControls.frame = NSRect(x: 168, y: 1, width: 55, height: 11)
         miniSpectrum.isHidden = false
@@ -327,6 +290,7 @@ class MainPlayerView: NSView {
         // FIXME: implement play state sprites
         playIndicator.isHidden = true
 
+        titleBarButtons.frame = NSRect(x: 0, y: bounds.height - 14, width: bounds.width, height: 14)
         // 7-segment time (webamp #time at 39,26,59,13 → y=77; widened 1px to fit last digit)
         timeDisplay.frame = NSRect(x: 39, y: 77, width: 60, height: 13)
         // Spectrum / visualizer (webamp 24,43,76,16 → y=57)
@@ -540,7 +504,7 @@ class MainPlayerView: NSView {
         playlistView?.nowPlayingDuration = track.formattedDuration
     }
     
-    private func showWindowMenu() {
+    func showWindowMenu() {
         guard let delegate = NSApp.delegate as? AppDelegate else { return }
         let menu = delegate.buildCornerPopupMenu()
         let anchor = NSPoint(x: 0, y: bounds.height - 18)
@@ -587,12 +551,7 @@ class MainPlayerView: NSView {
         let point = convert(event.locationInWindow, from: nil)
         let titleBarMinY = bounds.height - 14
         guard point.y >= titleBarMinY else { super.mouseDown(with: event); return }
-        // Don't drag from close/minimize/menu hit-zones
-        if closeHitZone.frame.contains(point) || minimizeHitZone.frame.contains(point)
-            || shadedHitZone.frame.contains(point) || menuHitZone.frame.contains(point) {
-            super.mouseDown(with: event)
-            return
-        }
+
         dragOrigin = event.locationInWindow
         onTitleBarDragBegan?(NSEvent.mouseLocation)
     }

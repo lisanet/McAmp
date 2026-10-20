@@ -53,15 +53,10 @@ class EqualizerView: NSView {
     var onTitleBarDragChanged: ((NSPoint) -> Void)?
     var onTitleBarDragEnded: ((NSPoint) -> Void)?
 
-    private let closeHitZone = HitZone()
-    var onClose: (() -> Void)?
-    private let shadedHitZone = HitZone()
-    var onShadeChanged: ((Bool) -> Void)?
-    var isShaded: Bool = false {
-        didSet {
-            guard isShaded != oldValue else { return }
-            onShadeChanged?(isShaded)
-        }
+    let titleBarButtons = TitleButtons()
+    var isShaded: Bool {
+        get { titleBarButtons.isShaded }
+        set { titleBarButtons.isShaded = newValue }
     }
 
     var autoMode: Bool {
@@ -86,12 +81,7 @@ class EqualizerView: NSView {
     required init?(coder: NSCoder) { fatalError() }
 
     private func setupSubviews() {
-        addSubview(closeHitZone)
-        let closeClick = NSClickGestureRecognizer(target: self, action: #selector(handleSkinnedClose))
-        closeHitZone.addGestureRecognizer(closeClick)
-        addSubview(shadedHitZone)
-        let shadedClick = NSClickGestureRecognizer(target: self, action: #selector(handleSkinnedShade))
-        shadedHitZone.addGestureRecognizer(shadedClick)
+        addSubview(titleBarButtons)
         
         // shaded mode volume slider
         volumeSlider.value = 0.75
@@ -145,14 +135,6 @@ class EqualizerView: NSView {
         autoButton.spriteKeyProvider = { active, pressed in .eqAutoButton(active: active, pressed: pressed) }
         presetsButton.spriteKeyProvider = { _, pressed in .eqPresetsButton(pressed: pressed) }
     }
-
-    @objc private func handleSkinnedClose() {
-        self.onClose?()
-    }
-
-    @objc private func handleSkinnedShade() {
-        isShaded.toggle()
-    }
     
     /// Hides freq/dB/PRE/dB-unit labels and the title bar when a skin is loaded.
     /// All these labels are baked into eqmain.bmp; the title bar is replaced by
@@ -199,28 +181,18 @@ class EqualizerView: NSView {
 
     override func layout() {
         super.layout()
-        layoutTitleHitZones()
         if isShaded {
             layoutShaded()
         } else {
             layoutSkinned()
         }
     }
-
-    private func layoutTitleHitZones() {
-        let h = bounds.height                 // 116 or 14
-        let hitSize: CGFloat = 10
-        let hitY = h - 2 - hitSize
-        closeHitZone.frame    = NSRect(x: 264, y: hitY, width: hitSize, height: hitSize)
-        shadedHitZone.frame   = NSRect(x: 254, y: hitY, width: hitSize, height: hitSize)
-        //minimizeHitZone.frame = NSRect(x: 244, y: hitY, width: hitSize, height: hitSize)
-        //menuHitZone.frame     = NSRect(x: 6,   y: hitY, width: hitSize, height: hitSize)
-    }
     
     private func layoutShaded() {
         bodyViews.forEach { $0.isHidden = true }
         volumeSlider.isHidden = false
         balanceSlider.isHidden = false
+        titleBarButtons.frame = NSRect(x: 0, y: bounds.height - 14, width: bounds.width, height: 14)
         volumeSlider.frame = NSRect(x: 61, y: 3, width: 97, height: 7)
         balanceSlider.frame = NSRect(x: 164, y: 3, width: 42, height: 7)
     }
@@ -228,11 +200,11 @@ class EqualizerView: NSView {
     /// Exact Webamp EQ pixel coordinates. View bounds are 275x116 when skinned.
     /// Y converted from Webamp top-down to AppKit bottom-up: y = 116 - y_webamp - h.
     private func layoutSkinned() {
- 
         bodyViews.forEach { $0.isHidden = false }
         volumeSlider.isHidden = true
         balanceSlider.isHidden = true
 
+        titleBarButtons.frame = NSRect(x: 0, y: bounds.height - 14, width: bounds.width, height: 14)
         // ON button: webamp (14, 18, 26, 12) → y = 116-18-12 = 86
         onButton.frame = NSRect(x: 14, y: 86, width: 26, height: 12)
         // AUTO button: webamp (39, 18, 33, 12) → y = 86
@@ -442,11 +414,7 @@ class EqualizerView: NSView {
     override func mouseDown(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
         guard point.y >= bounds.height - 14 else { super.mouseDown(with: event); return }
-        // Don't drag from close/minimize/menu hit-zones
-        if closeHitZone.frame.contains(point) || shadedHitZone.frame.contains(point) {
-            super.mouseDown(with: event)
-            return
-        }
+
         dragOrigin = event.locationInWindow
         onTitleBarDragBegan?(NSEvent.mouseLocation)
     }
