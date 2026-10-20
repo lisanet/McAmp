@@ -472,7 +472,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         audioEngine.repeatMode = next
     }
 
-    @objc private func toggleShuffle() { playlistManager.shuffleTracks() }
+    @objc private func toggleShuffle() { playlistManager.isShuffle.toggle() }
 
     @objc private func showPlayerAction() {
         mainWindow.bringAllWindowsToFront(prioritizing: mainWindow)
@@ -636,6 +636,10 @@ extension AppDelegate: NSMenuItemValidation {
             menuItem.state = (playlistManager?.autoPlay ?? false) ? .on : .off
         case #selector(importFromMusicLibraryAction):
             return importMusicController == nil
+        case #selector(toggleShuffle):
+            menuItem.state = (playlistManager?.isShuffle ?? false) ? .on : .off
+        case #selector(toggleRepeat):
+            menuItem.state = audioEngine.repeatMode != .off ? .on : .off
         default:
             break
         }

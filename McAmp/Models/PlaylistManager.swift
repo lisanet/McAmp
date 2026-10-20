@@ -23,7 +23,7 @@ class PlaylistManager: ObservableObject {
     var autoPlay: Bool = false
     var autoPlayOnStartup: Bool = false
     
-    var isShuffle = false {
+    @Published var isShuffle = false {
         didSet {
             playedInShuffle.removeAll()
             shuffleHistory.removeAll()

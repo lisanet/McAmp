@@ -154,14 +154,15 @@ class MainPlayerView: NSView {
 
         // Button actions
         shuffleButton.onClick = { [weak self] in
-            self?.isShuffle.toggle()
-            // self?.playlistManager?.shuffleTracks()
-            self?.playlistManager?.isShuffle = self?.isShuffle ?? false
+            guard let pm = self?.playlistManager else { return }
+            pm.isShuffle.toggle()
         }
+
         repeatButton.onClick = { [weak self] in
-            guard let engine = self?.audioEngine else { return }
+            guard let self, let engine = self.audioEngine else { return }
             let next = RepeatMode(rawValue: (engine.repeatMode.rawValue + 1) % 3) ?? .off
             engine.repeatMode = next
+            self.lcdDisplay.showOverlay(Self.repeatOverlayText(for: next), duration: 1.5)
         }
         eqButton.onClick = { [weak self] in self?.onToggleEQ?() }
         plButton.onClick = { [weak self] in self?.onTogglePL?() }
@@ -174,6 +175,14 @@ class MainPlayerView: NSView {
     @objc private func handleOpenGitHub() {
         if let url = URL(string: "https://github.com/lisanet/mcamp") {
             NSWorkspace.shared.open(url)
+        }
+    }
+    
+    private static func repeatOverlayText(for mode: RepeatMode) -> String {
+        switch mode {
+        case .off:      return "repeat off"
+        case .track:    return "repeat track"
+        case .playlist: return "repeat playlist"
         }
     }
 
@@ -258,6 +267,17 @@ class MainPlayerView: NSView {
  
             TextSpriteRenderer.draw(bitrateStr, at: NSPoint(x: 111, y: textY), sheet: textSheet)
             TextSpriteRenderer.draw(sampleStr,  at: NSPoint(x: 156, y: textY), sheet: textSheet)
+        }
+        
+        // repeat track indicator
+        if audioEngine?.repeatMode == .track {
+            WinampTheme.provider.playlistStyle.normal.setFill()
+            NSRect(x: 36, y: 79, width: 1, height: 3).fill()
+        }
+        if audioEngine?.repeatMode == .playlist {
+            WinampTheme.provider.playlistStyle.normal.setFill()
+            NSRect(x: 36, y: 79, width: 2, height: 1).fill()
+            NSRect(x: 36, y: 81, width: 2, height: 1).fill()
         }
     }
 
@@ -485,6 +505,26 @@ class MainPlayerView: NSView {
             .sink { [weak self] mode in
                 self?.repeatButton.isActive = mode != .off
                 self?.repeatButton.needsDisplay = true
+                self?.needsDisplay = true
+            }
+            .store(in: &cancellables)
+        
+        // Shuffle state on app startup without showing display info
+        playlistManager.$isShuffle
+            .receive(on: DispatchQueue.main)
+            .removeDuplicates()
+            .sink { [weak self] on in
+                self?.isShuffle = on
+                self?.shuffleButton.needsDisplay = true
+            }
+            .store(in: &cancellables)
+        // Shuffle state after startup shows display info
+        playlistManager.$isShuffle
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .removeDuplicates()
+            .sink { [weak self] on in
+                self?.lcdDisplay.showOverlay(on ? "shuffle on" : "shuffle off", duration: 1.5)
             }
             .store(in: &cancellables)
     }
