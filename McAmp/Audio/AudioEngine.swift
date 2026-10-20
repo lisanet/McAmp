@@ -394,6 +394,10 @@ class AudioEngine: ObservableObject {
     }
 
     func pause() {
+        if playState == .paused {
+            play()
+            return
+        }
         playerNode.pause()
         isPlaying = false
         playState = .paused
