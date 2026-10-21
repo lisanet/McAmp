@@ -583,7 +583,10 @@ class MainPlayerView: NSView {
         guard minute != lastRadioClockMinute else { return }
         
         lastRadioClockMinute = minute
-        timeDisplay.timeInSeconds = TimeInterval(hour * 60 + minute)
+        let hourminute = TimeInterval(hour * 60 + minute)
+        timeDisplay.timeInSeconds = hourminute
+        nowPlayingTime = hourminute
+        playlistView?.nowPlayingTime = hourminute
     }
 
     // MARK: - Mouse / Window dragging (skinned mode)
