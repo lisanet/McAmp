@@ -288,11 +288,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         alwaysOnTop.keyEquivalentModifierMask = [.command, .shift]
         alwaysOnTop.state = state.alwaysOnTop ? .on : .off
         
-        let scalingValues: [(name: String, scale: CGFloat)] = [("Tiny", 1.0), ("Standard", 1.3), ("Medium", 1.4), ("Large", 1.5), ("Double", 2.0)]
+        let scalingValues: [(name: String, scale: CGFloat)] = [("Tiny", 1.0), ("Small", 1.3), ("Standard", 1.4), ("Medium", 1.5), ("Large", 2.0)]
         let scalingItem = NSMenuItem(title: "Scaling...", action: nil, keyEquivalent: "")
         let scalingSubMenu = NSMenu(title: "Scaling")
         for (name, scale) in scalingValues {
-            let mi = item(String(format: "%@ (%.1f)", name, scale), #selector(setScaling(_:)), "")
+            let mi = item(String(format: "%.1f - %@", scale, name), #selector(setScaling(_:)), "")
             mi.representedObject = scale
             mi.state = abs(WinampTheme.scale - scale) < 0.001 ? .on : .off
             scalingSubMenu.addItem(mi)
